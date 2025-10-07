@@ -11,25 +11,30 @@ import { AssistantText } from "./assistantText";
 type Props = {
   openAiKey: string;
   elevenLabsKey: string;
+  openRouterKey: string;
   systemPrompt: string;
   chatLog: Message[];
   elevenLabsParam: ElevenLabsParam;
   koeiroParam: KoeiroParam;
   assistantMessage: string;
+  selectedModelId: string; // Nuevo
+  uiColor: string; // Nuevo
   onChangeSystemPrompt: (systemPrompt: string) => void;
   onChangeAiKey: (key: string) => void;
   onChangeElevenLabsKey: (key: string) => void;
   onChangeChatLog: (index: number, text: string) => void;
   onChangeElevenLabsParam: (param: ElevenLabsParam) => void;
   onChangeKoeiromapParam: (param: KoeiroParam) => void;
+  onChangeSelectedModelId: (id: string) => void; // Nuevo
+  onChangeUiColor: (color: string) => void; // Nuevo
   handleClickResetChatLog: () => void;
   handleClickResetSystemPrompt: () => void;
+  onDeleteAllData: () => void; // Nuevo
   backgroundImage: string;
   onChangeBackgroundImage: (value: string) => void;
   onChatMessage: (message: string) => void;
   onTokensUpdate: (tokens: any) => void;
   onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  openRouterKey: string;
 };
 export const Menu = ({
   openAiKey,
@@ -40,14 +45,19 @@ export const Menu = ({
   elevenLabsParam,
   koeiroParam,
   assistantMessage,
+  selectedModelId, // Nuevo
+  uiColor, // Nuevo
   onChangeSystemPrompt,
   onChangeAiKey,
   onChangeElevenLabsKey,
   onChangeChatLog,
   onChangeElevenLabsParam,
   onChangeKoeiromapParam,
+  onChangeSelectedModelId, // Nuevo
+  onChangeUiColor, // Nuevo
   handleClickResetChatLog,
   handleClickResetSystemPrompt,
+  onDeleteAllData, // Nuevo
   backgroundImage,
   onChangeBackgroundImage,
   onChatMessage,
@@ -137,13 +147,14 @@ export const Menu = ({
 
   return (
     <>
-      <div className="absolute z-10 m-24">
+      <div className="absolute z-10 m-4 md:m-8">
         <div className="grid grid-flow-col gap-[8px]">
           <IconButton
             iconName="24/Menu"
             label="Settings"
             isProcessing={false}
             onClick={() => setShowSettings(true)}
+            color={uiColor} // Aplicar color
           ></IconButton>
           {showChatLog ? (
             <IconButton
@@ -151,6 +162,7 @@ export const Menu = ({
               label="Conversation Log"
               isProcessing={false}
               onClick={() => setShowChatLog(false)}
+              color={uiColor} // Aplicar color
             />
           ) : (
             <IconButton
@@ -159,6 +171,7 @@ export const Menu = ({
               isProcessing={false}
               disabled={chatLog.length <= 0}
               onClick={() => setShowChatLog(true)}
+              color={uiColor} // Aplicar color
             />
           )}
         </div>
@@ -188,6 +201,12 @@ export const Menu = ({
           onTokensUpdate={onTokensUpdate}
           onChatMessage={onChatMessage}
           onChangeOpenRouterKey={onChangeOpenRouterKey}
+          // Nuevas props
+          selectedModelId={selectedModelId}
+          onChangeSelectedModelId={onChangeSelectedModelId}
+          onDeleteAllData={onDeleteAllData}
+          uiColor={uiColor}
+          onChangeUiColor={onChangeUiColor}
         />
       )}
       {!showChatLog && assistantMessage && (
