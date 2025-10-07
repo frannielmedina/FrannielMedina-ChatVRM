@@ -1,3 +1,4 @@
+// src/pages/index.tsx
 import { useCallback, useContext, useEffect, useState, useRef } from "react";
 import Head from 'next/head'; 
 import VrmViewer from "@/components/vrmViewer";
