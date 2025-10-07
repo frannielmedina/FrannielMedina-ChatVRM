@@ -1,4 +1,3 @@
-// src/pages/index.tsx
 import { useCallback, useContext, useEffect, useState } from "react";
 import Head from 'next/head'; // Añadido para inyectar CSS
 import VrmViewer from "@/components/vrmViewer";
@@ -22,8 +21,8 @@ import { ElevenLabsParam, DEFAULT_ELEVEN_LABS_PARAM } from "@/features/constants
 import { buildUrl } from "@/utils/buildUrl";
 import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
-import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
-import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
+import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog"; // ¡Asegúrate de que este archivo existe!
+import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels"; // ¡Asegúrate de que este archivo existe!
 
 
 const m_plus_2 = M_PLUS_2({
@@ -84,36 +83,35 @@ export default function Home() {
 
   // Carga inicial de datos desde localStorage
   useEffect(() => {
-    if (typeof window === "undefined") return; // Asegurar que solo corra en el cliente
-    const storedChatVRMParams = window.localStorage.getItem("chatVRMParams");
-    if (storedChatVRMParams) {
-      try {
-        const params = JSON.parse(storedChatVRMParams);
-        if (params.systemPrompt) setSystemPrompt(params.systemPrompt);
-        if (params.elevenLabsParam) setElevenLabsParam(params.elevenLabsParam);
-        if (params.chatLog) setChatLog(params.chatLog);
-        if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
-      } catch (e) {
-        console.error("Error al parsear chatVRMParams:", e);
-      }
+    if (window.localStorage.getItem("chatVRMParams")) {
+      const params = JSON.parse(
+        window.localStorage.getItem("chatVRMParams") as string
+      );
+      setSystemPrompt(params.systemPrompt);
+      setElevenLabsParam(params.elevenLabsParam);
+      setChatLog(params.chatLog);
+      if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
     }
-    
-    const key = window.localStorage.getItem("elevenLabsKey");
-    if (key) setElevenLabsKey(key);
-    
+    if (window.localStorage.getItem("elevenLabsKey")) {
+      const key = window.localStorage.getItem("elevenLabsKey") as string;
+      setElevenLabsKey(key);
+    }
     const savedOpenRouterKey = localStorage.getItem('openRouterKey');
-    if (savedOpenRouterKey) setOpenRouterKey(savedOpenRouterKey);
-    
+    if (savedOpenRouterKey) {
+      setOpenRouterKey(savedOpenRouterKey);
+    }
     const savedBackground = localStorage.getItem('backgroundImage');
-    if (savedBackground) setBackgroundImage(savedBackground);
-    
+    if (savedBackground) {
+      setBackgroundImage(savedBackground);
+    }
     const savedUiColor = localStorage.getItem('uiColor');
-    if (savedUiColor) setUiColor(savedUiColor);
+    if (savedUiColor) {
+      setUiColor(savedUiColor);
+    }
   }, []);
 
   // Guardado de datos en localStorage
   useEffect(() => {
-    if (typeof window === "undefined") return; // Asegurar que solo corra en el cliente
     process.nextTick(() => {
       window.localStorage.setItem(
         "chatVRMParams",
@@ -159,8 +157,8 @@ export default function Home() {
   const handleSpeakAi = useCallback(
     async (
       screenplay: Screenplay,
-      elevenLabsKeyParam: string,
-      elevenLabsParamParam: ElevenLabsParam,
+      elevenLabsKey: string,
+      elevenLabsParam: ElevenLabsParam,
       onStart?: () => void,
       onEnd?: () => void
     ) => {
@@ -168,8 +166,8 @@ export default function Home() {
       try {
         await speakCharacter(
           screenplay,
-          elevenLabsKeyParam,
-          elevenLabsParamParam,
+          elevenLabsKey,
+          elevenLabsParam,
           viewer,
           () => {
             setIsPlayingAudio(true);
@@ -233,9 +231,9 @@ export default function Home() {
       const modelName = OPENROUTER_MODELS.find(m => m.id === selectedModelId)?.model || OPENROUTER_MODELS[0].model;
 
       const stream = await getChatResponseStream(processedMessages, modelName, openRouterKey).catch(
-        (e: any) => {
+        (e) => {
           setChatProcessing(false);
-          const errorMsg = (e && e.message) ? e.message : String(e);
+          const errorMsg = e.message || e.toString();
           console.error("OpenRouter Error:", errorMsg);
 
           if (errorMsg.includes("401")) {
@@ -248,7 +246,7 @@ export default function Home() {
                 showCountdownDialog(
                     "¡Vaya! Algo malo ha pasado con la API de OpenRouter",
                     `La API de OpenRouter ha arrojado este error: ${match[2]}`,
-                    parseInt(match[1], 10)
+                    parseInt(match[1])
                 );
             } else {
                 showCountdownDialog(
@@ -318,11 +316,7 @@ export default function Home() {
         setChatProcessing(false);
         console.error(e);
       } finally {
-        try {
-          reader.releaseLock();
-        } catch (_) {
-          // ignore
-        }
+        reader.releaseLock();
       }
 
       const messageLogAssistant: Message[] = [
@@ -388,7 +382,6 @@ export default function Home() {
       <MessageInputContainer
         isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
         onChatProcessStart={handleSendChat}
-        // La prop 'isUiVisible' se ha eliminado de este componente
       />
       <Menu
         openAiKey={openAiKey}
@@ -404,10 +397,7 @@ export default function Home() {
         onChangeSystemPrompt={setSystemPrompt}
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
-        
-        {/* CORRECCIÓN FINAL: Cambiado el nombre de la prop para el tipado correcto */}
         onChangeKoeiromapParam={setKoeiroParam}
-        
         handleClickResetChatLog={() => setChatLog([])}
         handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
         backgroundImage={backgroundImage}
@@ -421,7 +411,6 @@ export default function Home() {
         onDeleteAllData={handleDeleteAllData}
         uiColor={uiColor}
         onChangeUiColor={setUiColor}
-        // La prop 'isUiVisible' se ha eliminado de este componente
       />
       <GitHubLink />
 
