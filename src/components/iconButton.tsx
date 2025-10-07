@@ -1,8 +1,13 @@
 // src/components/iconButton.tsx
 
 import React from 'react';
-import { KnownIconType } from '@pixiv/qoish-icons/dist/types'; // Asegúrate que esta importación sea correcta
-import { KnownIconType as BaseKnownIconType } from '@pixiv/qoish-icons'; // Asegúrate que esta importación sea correcta
+// CORRECCIÓN: Se eliminó la importación de la ruta '.../dist/types'
+// e importamos los tipos conocidos directamente del paquete.
+import { KnownIconType } from '@pixiv/qoish-icons'; 
+
+// El tipo 'string & {}' es una técnica de TypeScript para permitir que cualquier 'string'
+// sea asignable a un tipo de unión, aunque no esté en la lista de 'KnownIconType'.
+type CustomIconName = KnownIconType | (string & {}); 
 
 // Componente dummy o Spinner que actúa como indicador de carga
 const ProcessingIndicator = ({ color }: { color: string }) => (
@@ -12,11 +17,9 @@ const ProcessingIndicator = ({ color }: { color: string }) => (
   ></div>
 );
 
-type KnownIconTypeFix = KnownIconType | (string & {}); // Fix para permitir cualquier string en el tipo KnownIconType
-type KnownIconTypeUnion = keyof BaseKnownIconType | KnownIconTypeFix; // Unión de tipos para claridad
-
 type Props = {
-  iconName: KnownIconTypeUnion; // Acepta tipos conocidos O cualquier string
+  // Ahora iconName puede ser un KnownIconType o cualquier otra cadena de texto (string).
+  iconName: CustomIconName; 
   isProcessing: boolean;
   label?: string;
   onClick: () => void;
@@ -47,9 +50,9 @@ export const IconButton = ({
       {isProcessing ? (
         <ProcessingIndicator color="#ffffff" />
       ) : (
-        // 👇 El tipo ya es compatible con 'string' debido a la corrección en 'Props'
+        // Forzamos el tipo 'as string' para garantizar que el componente DOM acepte la cadena.
         <pixiv-icon 
-          name={iconName as KnownIconTypeUnion} // Ahora TS está feliz
+          name={iconName as string} 
           scale="1"
         ></pixiv-icon>
       )}
