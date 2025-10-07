@@ -1,5 +1,5 @@
-import { useCallback, useContext, useEffect, useState } from "react";
-import Head from 'next/head'; // Añadido para inyectar CSS
+import { useCallback, useContext, useEffect, useState, useRef } from "react";
+import Head from 'next/head'; 
 import VrmViewer from "@/components/vrmViewer";
 import { ViewerContext } from "@/features/vrmViewer/viewerContext";
 import {
@@ -21,8 +21,8 @@ import { ElevenLabsParam, DEFAULT_ELEVEN_LABS_PARAM } from "@/features/constants
 import { buildUrl } from "@/utils/buildUrl";
 import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
-import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog"; // ¡Asegúrate de que este archivo existe!
-import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels"; // ¡Asegúrate de que este archivo existe!
+import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
+import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
 
 
 const m_plus_2 = M_PLUS_2({
@@ -58,10 +58,12 @@ export default function Home() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
 
-  // --- Nuevos estados para las mejoras ---
+  // --- Mejoras de UI y Modelos ---
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
+  const [isUiVisible, setIsUiVisible] = useState(true); // NUEVO: Estado de visibilidad de la IU
+  const inactivityTimerRef = useRef<number | null>(null); // NUEVO: Referencia al temporizador
 
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -80,6 +82,41 @@ export default function Home() {
       onClose: () => setErrorDialog(null),
     });
   };
+
+  // --- Lógica de Inactividad del Cursor ---
+  useEffect(() => {
+    const INACTIVITY_TIMEOUT_MS = 60000; // 60 segundos (1 minuto)
+
+    const resetTimer = () => {
+      setIsUiVisible(true);
+      if (inactivityTimerRef.current !== null) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+      // Establece un nuevo temporizador
+      inactivityTimerRef.current = window.setTimeout(() => {
+        setIsUiVisible(false);
+      }, INACTIVITY_TIMEOUT_MS);
+    };
+
+    // Event listeners para detectar actividad (incluye tacto en móviles)
+    document.addEventListener('mousemove', resetTimer);
+    document.addEventListener('keydown', resetTimer);
+    document.addEventListener('click', resetTimer);
+    
+    // Inicia el temporizador al montar el componente
+    resetTimer();
+
+    // Limpieza al desmontar el componente
+    return () => {
+      document.removeEventListener('mousemove', resetTimer);
+      document.removeEventListener('keydown', resetTimer);
+      document.removeEventListener('click', resetTimer);
+      if (inactivityTimerRef.current !== null) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, []);
+  // ------------------------------------------------------------------
 
   // Carga inicial de datos desde localStorage
   useEffect(() => {
@@ -382,6 +419,7 @@ export default function Home() {
       <MessageInputContainer
         isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
         onChatProcessStart={handleSendChat}
+        isUiVisible={isUiVisible} // <-- NUEVO PROP
       />
       <Menu
         openAiKey={openAiKey}
@@ -411,8 +449,10 @@ export default function Home() {
         onDeleteAllData={handleDeleteAllData}
         uiColor={uiColor}
         onChangeUiColor={setUiColor}
+        isUiVisible={isUiVisible} // <-- NUEVO PROP
       />
-      <GitHubLink />
+      {/* Ocultar GitHubLink también si la IU no es visible */}
+      {isUiVisible && <GitHubLink />}
 
       {errorDialog && (
         <ErrorDialog
