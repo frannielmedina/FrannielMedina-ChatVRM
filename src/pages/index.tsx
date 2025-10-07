@@ -436,7 +436,11 @@ export default function Home() {
         onChangeSystemPrompt={setSystemPrompt}
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
-        onChangeKoeiroParam={setKoeiroParam}
+        
+        {/* CORRECCIÓN: Cambiado de 'onChangeKoeiroParam' a 'onChangeKoeiromapParam' 
+            para resolver el error de tipado con el componente Menu/Settings. */}
+        onChangeKoeiromapParam={setKoeiroParam} 
+        
         handleClickResetChatLog={() => setChatLog([])}
         handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
         backgroundImage={backgroundImage}
