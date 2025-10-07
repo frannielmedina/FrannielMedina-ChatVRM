@@ -1,20 +1,14 @@
-// src/components/messageInputContainer.tsx
-
 import React, { useState, useCallback } from 'react';
 import { IconButton } from './iconButton'; 
 
 // --- IMPLEMENTACIÓN DUMMY PARA PERMITIR LA COMPILACIÓN ---
-// Sustituye el hook useSpeak hasta que el archivo sea restaurado o creado
 const useSpeak = () => {
-    // Estas funciones deben devolver una Promesa<void> o Promesa<string>
     const startRecording = () => {
         console.log("Dummy Recording Started. (Restore useSpeak.ts for actual function)");
         return Promise.resolve();
     };
     const stopRecording = () => {
         console.log("Dummy Recording Stopped. (Restore useSpeak.ts for actual function)");
-        // Devuelve un string vacío para simular que no se reconoció nada, o un mensaje de prueba.
-        // Si quieres probar un texto, cámbialo aquí: return Promise.resolve("Este es un mensaje de prueba.");
         return Promise.resolve(""); 
     };
     return { startRecording, stopRecording };
@@ -24,7 +18,7 @@ const useSpeak = () => {
 type Props = {
   isChatProcessing: boolean;
   onChatProcessStart: (text: string) => void;
-  isUiVisible: boolean; // <-- PROP DE VISIBILIDAD
+  isUiVisible: boolean;
 };
 
 export const MessageInputContainer = ({
@@ -35,10 +29,7 @@ export const MessageInputContainer = ({
   const [chatText, setChatText] = useState('');
   const [isMicProcessing, setIsMicProcessing] = useState(false);
   
-  // Usando la implementación dummy
   const { startRecording, stopRecording } = useSpeak();
-  
-  // Obtener el color de la UI para los IconButtons (usando variable CSS)
   const uiColor = "var(--main-ui-color)";
 
   const handleChatTextChange = useCallback(
@@ -66,15 +57,12 @@ export const MessageInputContainer = ({
   
   const handleMicClick = useCallback(async () => {
     if (isMicProcessing) {
-      // Detener grabación
       setIsMicProcessing(false);
-      // El resultado de stopRecording es el texto reconocido
       const text = await stopRecording(); 
       if (text && text.trim() !== '') {
         onChatProcessStart(text);
       }
     } else {
-      // Iniciar grabación
       setIsMicProcessing(true);
       await startRecording();
     }
@@ -85,11 +73,10 @@ export const MessageInputContainer = ({
     <div 
       className={`absolute bottom-0 z-10 w-full p-4 md:p-8 transition-opacity duration-500 ${
         isUiVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-      }`} // <-- Animación de Inactividad
+      }`}
     >
       <div className="mx-auto flex w-full max-w-lg items-end justify-center gap-4">
         
-        {/* Botón de Micrófono (Solo visible si no hay chat en curso) */}
         {!isChatProcessing && (
           <IconButton
             iconName={isMicProcessing ? "24/MicFill" : "24/MicOutline"}
@@ -101,7 +88,6 @@ export const MessageInputContainer = ({
           />
         )}
         
-        {/* Área de Texto y Botón de Enviar */}
         <div className="flex w-full items-end gap-2 bg-white p-2 rounded-xl shadow-lg">
           <textarea
             className="w-full bg-transparent resize-none h-10 p-2 text-gray-800 focus:outline-none"
