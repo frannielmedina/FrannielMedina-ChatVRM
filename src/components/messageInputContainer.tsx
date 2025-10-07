@@ -1,13 +1,30 @@
 // src/components/messageInputContainer.tsx
 
 import React, { useState, useCallback } from 'react';
-import { useSpeak } from '@/features/messages/useSpeak'; 
+// import { useSpeak } from '@/features/messages/useSpeak'; // <-- ELIMINADO: Módulo no encontrado
 import { IconButton } from './iconButton'; 
+
+// --- IMPLEMENTACIÓN DUMMY PARA PERMITIR LA COMPILACIÓN ---
+// Sustituye el hook useSpeak hasta que el archivo sea restaurado o creado
+const useSpeak = () => {
+    // Estas funciones deben devolver una Promesa<void> o Promesa<string>
+    const startRecording = () => {
+        console.log("Dummy Recording Started. (Restore useSpeak.ts for actual function)");
+        return Promise.resolve();
+    };
+    const stopRecording = () => {
+        console.log("Dummy Recording Stopped. (Restore useSpeak.ts for actual function)");
+        // Devuelve un string vacío para simular que no se reconoció nada, o un mensaje de prueba
+        return Promise.resolve(""); 
+    };
+    return { startRecording, stopRecording };
+};
+// --------------------------------------------------------
 
 type Props = {
   isChatProcessing: boolean;
   onChatProcessStart: (text: string) => void;
-  isUiVisible: boolean; 
+  isUiVisible: boolean; // <-- PROP DE VISIBILIDAD
 };
 
 export const MessageInputContainer = ({
@@ -18,8 +35,10 @@ export const MessageInputContainer = ({
   const [chatText, setChatText] = useState('');
   const [isMicProcessing, setIsMicProcessing] = useState(false);
   
+  // Usando la implementación dummy
   const { startRecording, stopRecording } = useSpeak();
   
+  // Obtener el color de la UI para los IconButtons (usando variable CSS)
   const uiColor = "var(--main-ui-color)";
 
   const handleChatTextChange = useCallback(
@@ -49,7 +68,8 @@ export const MessageInputContainer = ({
     if (isMicProcessing) {
       // Detener grabación
       setIsMicProcessing(false);
-      const text = await stopRecording();
+      // El resultado de stopRecording es el texto reconocido
+      const text = await stopRecording(); 
       if (text && text.trim() !== '') {
         onChatProcessStart(text);
       }
