@@ -7,7 +7,7 @@ import { IconButton } from './iconButton';
 type Props = {
   isChatProcessing: boolean;
   onChatProcessStart: (text: string) => void;
-  isUiVisible: boolean; // <-- PROP DE VISIBILIDAD
+  isUiVisible: boolean; 
 };
 
 export const MessageInputContainer = ({
@@ -18,10 +18,8 @@ export const MessageInputContainer = ({
   const [chatText, setChatText] = useState('');
   const [isMicProcessing, setIsMicProcessing] = useState(false);
   
-  // Asume que useSpeak está correctamente definido
   const { startRecording, stopRecording } = useSpeak();
   
-  // Obtener el color de la UI para los IconButtons (usando variable CSS)
   const uiColor = "var(--main-ui-color)";
 
   const handleChatTextChange = useCallback(
