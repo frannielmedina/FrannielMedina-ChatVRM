@@ -1,12 +1,11 @@
 // src/components/iconButton.tsx
 
 import React from 'react';
-// CORRECCIÓN: Se eliminó la importación de la ruta '.../dist/types'
-// e importamos los tipos conocidos directamente del paquete.
+// Importación simplificada de tipos. Si esto falla, el paquete no está instalado correctamente.
 import { KnownIconType } from '@pixiv/qoish-icons'; 
 
-// El tipo 'string & {}' es una técnica de TypeScript para permitir que cualquier 'string'
-// sea asignable a un tipo de unión, aunque no esté en la lista de 'KnownIconType'.
+// El tipo CustomIconName permite que el desarrollador use cualquier string,
+// incluso si no está en la lista oficial de KnownIconType.
 type CustomIconName = KnownIconType | (string & {}); 
 
 // Componente dummy o Spinner que actúa como indicador de carga
@@ -51,6 +50,7 @@ export const IconButton = ({
         <ProcessingIndicator color="#ffffff" />
       ) : (
         // Forzamos el tipo 'as string' para garantizar que el componente DOM acepte la cadena.
+        // Esto es necesario porque 'pixiv-icon' es un elemento personalizado no conocido por React/TS.
         <pixiv-icon 
           name={iconName as string} 
           scale="1"
