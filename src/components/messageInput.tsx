@@ -1,3 +1,5 @@
+// src/components/messageInput.tsx
+
 import { IconButton } from "./iconButton";
 
 type Props = {
@@ -8,8 +10,10 @@ type Props = {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
   onKeyDownUserMessage: (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onClickSendButton: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onClickMicButton: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  
+  // CORRECCIÓN: Eliminamos el argumento 'event'
+  onClickSendButton: () => void; 
+  onClickMicButton: () => void;
 };
 export const MessageInput = ({
   userMessage,
@@ -26,18 +30,18 @@ export const MessageInput = ({
         <div className="mx-auto max-w-4xl p-16">
           <div className="grid grid-flow-col gap-[8px] grid-cols-[min-content_1fr_min-content]">
             <IconButton
-              iconName="24/Microphone"
+              iconName={isMicRecording ? "24/MicFill" : "24/Microphone"} // Usamos el ícono dinámico
               className="bg-secondary hover:bg-secondary-hover active:bg-secondary-press disabled:bg-secondary-disabled"
               isProcessing={isMicRecording}
               disabled={isChatProcessing}
-              onClick={onClickMicButton}
+              onClick={onClickMicButton} // Ahora es compatible con '() => void'
             />
             <input
               type="text"
               placeholder="Message"
               onChange={onChangeUserMessage}
               onKeyDown={onKeyDownUserMessage}
-              disabled={isChatProcessing}
+              disabled={isChatProcessing || isMicRecording} // Deshabilitar si está grabando micrófono
               className="bg-surface1 hover:bg-surface1-hover focus:bg-surface1 disabled:bg-surface1-disabled disabled:text-primary-disabled rounded-16 w-full px-16 text-text-primary typography-16 font-M_PLUS_2 font-bold disabled"
               value={userMessage}
             ></input>
@@ -46,8 +50,8 @@ export const MessageInput = ({
               iconName="24/Send"
               className="bg-secondary hover:bg-secondary-hover active:bg-secondary-press disabled:bg-secondary-disabled"
               isProcessing={isChatProcessing}
-              disabled={isChatProcessing || !userMessage}
-              onClick={onClickSendButton}
+              disabled={isChatProcessing || isMicRecording || !userMessage.trim()} // También deshabilitar por micrófono
+              onClick={onClickSendButton} // Ahora es compatible con '() => void'
             />
           </div>
         </div>
