@@ -14,7 +14,6 @@ import { ColorPicker } from "./colorPicker";
 import Image from 'next/image';
 
 type Props = {
-  // ... (Las props de tu componente)
   openAiKey: string;
   elevenLabsKey: string;
   openRouterKey: string;
@@ -25,8 +24,9 @@ type Props = {
   selectedModelId: string;
   uiColor: string;
   onClickClose: () => void;
-  onChangeAiKey: (key: string) => void;
-  onChangeElevenLabsKey: (key: string) => void;
+  // Estas props aceptan un string, como está corregido en menu.tsx
+  onChangeAiKey: (key: string) => void; 
+  onChangeElevenLabsKey: (key: string) => void; 
   onChangeElevenLabsVoice: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   onChangeSystemPrompt: (systemPrompt: string) => void;
   onChangeChatLog: (index: number, text: string) => void;
@@ -83,18 +83,18 @@ export const Settings = ({
   const handleTabChange = useCallback((tab: Tab) => {
     if (tab === activeTab) return;
     setIsTabChanging(true);
-    // Un pequeño retardo para mostrar la animación de fade out/in
+    // Un pequeño retardo para mostrar la animación de fade out/in (200ms)
     setTimeout(() => {
       setActiveTab(tab);
       setIsTabChanging(false);
-    }, 200); // Duración de la transición CSS
+    }, 200); 
   }, [activeTab]);
 
   // Componente para el encabezado de las pestañas
   const TabHeader = ({ tab, label }: { tab: Tab, label: string }) => (
     <button
       onClick={() => handleTabChange(tab)}
-      className={`py-2 px-4 text-sm font-semibold transition-colors duration-300 ${
+      className={`py-2 px-4 text-sm font-semibold transition-colors duration-300 whitespace-nowrap ${
         activeTab === tab
           ? 'border-b-2 border-[var(--main-ui-color)] text-[var(--main-ui-color)]'
           : 'text-gray-500 hover:text-gray-700'
@@ -105,6 +105,21 @@ export const Settings = ({
     </button>
   );
 
+  // Funciones locales para manejar los cambios de input (extraen el valor del evento)
+  const handleAiKeyChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChangeAiKey(event.target.value);
+    },
+    [onChangeAiKey]
+  );
+
+  const handleElevenLabsKeyChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChangeElevenLabsKey(event.target.value);
+    },
+    [onChangeElevenLabsKey]
+  );
+
   // Componente para renderizar el contenido de la pestaña activa
   const renderTabContent = () => {
     switch (activeTab) {
@@ -112,6 +127,7 @@ export const Settings = ({
         return (
           <>
             <h2 className="text-xl font-bold mb-4" style={{ color: uiColor }}>Claves de API</h2>
+            
             <div className="text-sm font-bold text-gray-800">Clave de OpenRouter</div>
             <input
               type="text"
@@ -124,10 +140,17 @@ export const Settings = ({
             <input
               type="text"
               value={elevenLabsKey}
-              onChange={onChangeElevenLabsKey}
+              onChange={handleElevenLabsKeyChange} // Usar la función local para extraer el valor
               className="bg-white border border-gray-300 rounded-md p-2 w-full mb-4 focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
             />
-            {/* ... (Aquí puedes poner la selección de voz de ElevenLabs) ... */}
+
+            <div className="text-sm font-bold text-gray-800">Clave de OpenAI (Legacy)</div>
+            <input
+              type="text"
+              value={openAiKey}
+              onChange={handleAiKeyChange} // Usar la función local para extraer el valor
+              className="bg-white border border-gray-300 rounded-md p-2 w-full mb-4 focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
+            />
           </>
         );
       case 'Model':
@@ -139,7 +162,23 @@ export const Settings = ({
                 selectedModelId={selectedModelId}
                 onChange={onChangeSelectedModelId}
             />
-            {/* ... (Aquí iría la configuración de Koeiro si la usas) ... */}
+            {/* Opciones de Voz ElevenLabs */}
+            <h3 className="text-lg font-bold mt-6 mb-2">Voz de Asistente</h3>
+            <label htmlFor="eleven-labs-voice" className="text-sm font-bold text-gray-800">
+                ElevenLabs Voice ID
+            </label>
+            <select
+                id="eleven-labs-voice"
+                value={elevenLabsParam.voiceId}
+                onChange={onChangeElevenLabsVoice}
+                className="bg-white border border-gray-300 rounded-md p-2 w-full focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
+                disabled={!elevenLabsKey}
+            >
+                <option value="EXAVITQu4vr4xnSDz7Sg">Rachel (Predeterminado)</option>
+                <option value="pOz8qP9jPq8cK2kM0Z0v">Emily</option>
+                <option value="S0WkUo39u8D4k0uK5S4u">Adam</option>
+                {/* Agrega más opciones de voz si las tienes */}
+            </select>
           </>
         );
       case 'SystemPrompt':
@@ -167,16 +206,30 @@ export const Settings = ({
             <h2 className="text-xl font-bold mb-4" style={{ color: uiColor }}>Apariencia</h2>
             <div className="text-sm font-bold text-gray-800 mb-2">Color de la Interfaz (UI)</div>
             <ColorPicker currentColor={uiColor} onChangeColor={onChangeUiColor} />
-            <div className="text-sm font-bold text-gray-800 mt-4 mb-2">Fondo de Pantalla</div>
-            {/* ... (Aquí iría tu lógica de cambio de fondo) ... */}
-            <TextButton
-                onClick={() => alert("Función de cambio de fondo pendiente de implementación.")}
-                style={{ backgroundColor: uiColor }}
-            >
-                Cambiar Fondo
-            </TextButton>
-            <div className="mt-6">
-                <div className="text-sm font-bold text-red-600 mb-2">Zona Roja</div>
+            
+            <h3 className="text-lg font-bold mt-6 mb-2">Visual</h3>
+            <div className="flex items-center space-x-2 mb-4">
+                <TextButton
+                    onClick={onClickOpenVrmFile}
+                    style={{ backgroundColor: uiColor }}
+                >
+                    Cargar archivo VRM
+                </TextButton>
+                {/* Preview de fondo si existe */}
+                {backgroundImage && (
+                    <div className="w-16 h-10 border rounded overflow-hidden relative">
+                        {/* Se mantiene <img> aquí por la advertencia, el foco es el logo en About */}
+                        <img 
+                            src={backgroundImage} 
+                            alt="Fondo actual" 
+                            className="object-cover w-full h-full" 
+                        /> 
+                    </div>
+                )}
+            </div>
+
+            <div className="mt-6 border-t pt-4 border-gray-200">
+                <div className="text-sm font-bold text-red-600 mb-2">Zona Roja (Danger Zone)</div>
                 <TextButton
                     onClick={onDeleteAllData}
                     style={{ backgroundColor: 'red' }}
@@ -191,8 +244,9 @@ export const Settings = ({
           <div className="text-center p-4">
             <h2 className="text-xl font-bold mb-4" style={{ color: uiColor }}>Acerca de ChatVRM</h2>
             <div className="mx-auto mb-6 w-32 h-32 relative">
+                {/* Logo de la aplicación con optimización de Next.js */}
                 <Image
-                    src="/chatvrmlogo.png" // Usar la ruta relativa a 'public'
+                    src="/chatvrmlogo.png" 
                     alt="ChatVRM Logo"
                     layout="fill"
                     objectFit="contain"
@@ -200,7 +254,7 @@ export const Settings = ({
                 />
             </div>
             <p className="text-gray-700 mb-4">
-              Esta aplicación está impulsada por el proyecto original **ChatVRM** y ha sido mejorada para funcionar con la API de OpenRouter.
+              Esta aplicación es una versión personalizada y mejorada del proyecto original **ChatVRM**, adaptada para utilizar **OpenRouter** como proveedor de modelos de lenguaje.
             </p>
             <p className="text-gray-700 mb-6">
               **Versión:** 1.0.0 (Custom Build)
