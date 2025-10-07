@@ -21,7 +21,7 @@ type Props = {
   assistantMessage: string;
   selectedModelId: string;
   uiColor: string;
-  isUiVisible: boolean; // <-- NUEVO PROP
+  isUiVisible: boolean;
   onChangeSystemPrompt: (systemPrompt: string) => void;
   onChangeAiKey: (key: string) => void;
   onChangeElevenLabsKey: (key: string) => void;
@@ -52,8 +52,8 @@ export const Menu = ({
   uiColor,
   isUiVisible,
   onChangeSystemPrompt,
-  onChangeAiKey, // <--- Destructuring de la prop
-  onChangeElevenLabsKey, // <--- Destructuring de la prop
+  onChangeAiKey, 
+  onChangeElevenLabsKey, 
   onChangeChatLog,
   onChangeElevenLabsParam,
   onChangeKoeiromapParam,
@@ -97,12 +97,6 @@ export const Menu = ({
     }
   }, [onChangeBackgroundImage]);
 
-  const handleChangeSystemPrompt = useCallback(
-    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onChangeSystemPrompt(event.target.value);
-    },
-    [onChangeSystemPrompt]
-  );
 
   const handleElevenLabsVoiceChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -205,14 +199,14 @@ export const Menu = ({
             chatLog={chatLog}
             systemPrompt={systemPrompt}
             koeiroParam={koeiroParam}
-            onClickClose={handleCloseSettings} // Función con delay para cerrar
+            onClickClose={handleCloseSettings} 
             
-            // CORRECCIÓN DEL ERROR DE TIPO: Pasar las props directamente (aceptan string)
+            // CORREGIDO: Pasamos las props de string directamente
             onChangeAiKey={onChangeAiKey} 
             onChangeElevenLabsKey={onChangeElevenLabsKey} 
+            onChangeSystemPrompt={onChangeSystemPrompt}
             
             onChangeElevenLabsVoice={handleElevenLabsVoiceChange}
-            onChangeSystemPrompt={handleChangeSystemPrompt}
             onChangeChatLog={onChangeChatLog}
             onChangeKoeiroParam={handleChangeKoeiroParam}
             onClickOpenVrmFile={handleClickOpenVrmFile}
