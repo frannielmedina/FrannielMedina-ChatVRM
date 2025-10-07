@@ -1,101 +1,110 @@
-import { MessageInput } from "@/components/messageInput";
-import { useState, useEffect, useCallback } from "react";
+// src/components/messageInputContainer.tsx
+
+import React, { useState, useCallback } from 'react';
+import { useSpeak } from '@/features/messages/useSpeak'; // Asume que tienes este hook
+import { IconButton } from './iconButton'; // Asume que tienes este componente
 
 type Props = {
   isChatProcessing: boolean;
   onChatProcessStart: (text: string) => void;
+  isUiVisible: boolean; // <-- NUEVO PROP: Para la animación de inactividad
 };
 
-/**
- * テキスト入力と音声入力を提供する
- *
- * 音声認識の完了時は自動で送信し、返答文の生成中は入力を無効化する
- *
- */
 export const MessageInputContainer = ({
   isChatProcessing,
   onChatProcessStart,
+  isUiVisible,
 }: Props) => {
-  const [userMessage, setUserMessage] = useState("");
-  const [speechRecognition, setSpeechRecognition] =
-    useState<SpeechRecognition>();
-  const [isMicRecording, setIsMicRecording] = useState(false);
+  const [chatText, setChatText] = useState('');
+  const [isMicProcessing, setIsMicProcessing] = useState(false);
+  
+  // Asume que useSpeak maneja la grabación de voz y devuelve funciones para iniciar/detener.
+  // Si no tienes este hook, el código de voz no funcionará.
+  const { startRecording, stopRecording } = useSpeak();
+  
+  // Obtener el color de la UI para los IconButtons (usando variable CSS)
+  const uiColor = "var(--main-ui-color)";
 
-  // 音声認識の結果を処理する
-  const handleRecognitionResult = useCallback(
-    (event: SpeechRecognitionEvent) => {
-      const text = event.results[0][0].transcript;
-      setUserMessage(text);
-
-      // 発言の終了時
-      if (event.results[0].isFinal) {
-        setUserMessage(text);
-        // 返答文の生成を開始
-        onChatProcessStart(text);
-      }
+  const handleChatTextChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setChatText(event.target.value);
     },
-    [onChatProcessStart]
+    []
   );
 
-  // 無音が続いた場合も終了する
-  const handleRecognitionEnd = useCallback(() => {
-    setIsMicRecording(false);
-  }, []);
+  const handleSend = useCallback(() => {
+    if (chatText.trim() === '') return;
+    onChatProcessStart(chatText);
+    setChatText('');
+  }, [chatText, onChatProcessStart]);
 
-  const handleClickMicButton = useCallback(() => {
-    if (isMicRecording) {
-      speechRecognition?.abort();
-      setIsMicRecording(false);
-
-      return;
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
+  
+  const handleMicClick = useCallback(async () => {
+    if (isMicProcessing) {
+      // Detener grabación
+      setIsMicProcessing(false);
+      const text = await stopRecording();
+      if (text && text.trim() !== '') {
+        onChatProcessStart(text);
+      }
+    } else {
+      // Iniciar grabación
+      setIsMicProcessing(true);
+      await startRecording();
     }
+  }, [isMicProcessing, onChatProcessStart, startRecording, stopRecording]);
 
-    speechRecognition?.start();
-    setIsMicRecording(true);
-  }, [isMicRecording, speechRecognition]);
-
-  const handleClickSendButton = useCallback(() => {
-    onChatProcessStart(userMessage);
-  }, [onChatProcessStart, userMessage]);
-
-  useEffect(() => {
-    const SpeechRecognition =
-      window.webkitSpeechRecognition || window.SpeechRecognition;
-
-    // FirefoxなどSpeechRecognition非対応環境対策
-    if (!SpeechRecognition) {
-      return;
-    }
-    const recognition = new SpeechRecognition();
-    recognition.lang = "en-US";
-    recognition.interimResults = true; // 認識の途中結果を返す
-    recognition.continuous = false; // 発言の終了時に認識を終了する
-
-    recognition.addEventListener("result", handleRecognitionResult);
-    recognition.addEventListener("end", handleRecognitionEnd);
-
-    setSpeechRecognition(recognition);
-  }, [handleRecognitionResult, handleRecognitionEnd]);
-
-  useEffect(() => {
-    if (!isChatProcessing) {
-      setUserMessage("");
-    }
-  }, [isChatProcessing]);
 
   return (
-    <MessageInput
-      userMessage={userMessage}
-      isChatProcessing={isChatProcessing}
-      isMicRecording={isMicRecording}
-      onKeyDownUserMessage={(e) => {
-        if (e.key === "Enter") {
-          handleClickSendButton();
-        }
-      }}
-      onChangeUserMessage={(e) => setUserMessage(e.target.value)}
-      onClickMicButton={handleClickMicButton}
-      onClickSendButton={handleClickSendButton}
-    />
+    <div 
+      className={`absolute bottom-0 z-10 w-full p-4 md:p-8 transition-opacity duration-500 ${
+        isUiVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+      }`} // <-- Animación de Inactividad
+    >
+      <div className="mx-auto flex w-full max-w-lg items-end justify-center gap-4">
+        
+        {/* Botón de Micrófono (Solo visible si no hay chat en curso) */}
+        {!isChatProcessing && (
+          <IconButton
+            iconName={isMicProcessing ? "24/MicFill" : "24/MicOutline"}
+            isProcessing={isMicProcessing}
+            onClick={handleMicClick}
+            disabled={isChatProcessing}
+            color={uiColor}
+            className="flex-shrink-0"
+          />
+        )}
+        
+        {/* Área de Texto y Botón de Enviar */}
+        <div className="flex w-full items-end gap-2 bg-white p-2 rounded-xl shadow-lg">
+          <textarea
+            className="w-full bg-transparent resize-none h-10 p-2 text-gray-800 focus:outline-none"
+            placeholder="Escribe un mensaje..."
+            rows={1}
+            value={chatText}
+            onChange={handleChatTextChange}
+            onKeyDown={handleKeyDown}
+            disabled={isChatProcessing || isMicProcessing}
+          />
+          <IconButton
+            iconName="24/Send"
+            isProcessing={isChatProcessing}
+            onClick={handleSend}
+            disabled={chatText.trim() === '' || isChatProcessing || isMicProcessing}
+            color={uiColor}
+            className="flex-shrink-0"
+          />
+        </div>
+      </div>
+    </div>
   );
 };
