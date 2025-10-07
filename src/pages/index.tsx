@@ -1,6 +1,6 @@
 // src/pages/index.tsx
-import { useCallback, useContext, useEffect, useState, useRef } from "react";
-import Head from 'next/head';
+import { useCallback, useContext, useEffect, useState } from "react";
+import Head from 'next/head'; // Añadido para inyectar CSS
 import VrmViewer from "@/components/vrmViewer";
 import { ViewerContext } from "@/features/vrmViewer/viewerContext";
 import {
@@ -24,6 +24,7 @@ import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
+
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -58,12 +59,11 @@ export default function Home() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
 
-  // --- Mejoras de UI y Modelos ---
+  // --- Nuevos estados para las mejoras ---
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
-  // NOTA: Se ha eliminado el estado isUiVisible y el timerRef.
-  
+
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('openRouterKey') || '';
@@ -82,52 +82,45 @@ export default function Home() {
     });
   };
 
-  // --- Lógica de Inactividad del Cursor ---
-  // NOTA: Se ha eliminado completamente el useEffect de inactividad.
-  // ------------------------------------------------------------------
-
   // Carga inicial de datos desde localStorage
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const saved = window.localStorage.getItem("chatVRMParams");
-    if (saved) {
+    if (typeof window === "undefined") return; // Asegurar que solo corra en el cliente
+    const storedChatVRMParams = window.localStorage.getItem("chatVRMParams");
+    if (storedChatVRMParams) {
       try {
-        const params = JSON.parse(saved);
+        const params = JSON.parse(storedChatVRMParams);
         if (params.systemPrompt) setSystemPrompt(params.systemPrompt);
         if (params.elevenLabsParam) setElevenLabsParam(params.elevenLabsParam);
         if (params.chatLog) setChatLog(params.chatLog);
         if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
       } catch (e) {
-        console.warn("Failed to parse chatVRMParams from localStorage", e);
+        console.error("Error al parsear chatVRMParams:", e);
       }
     }
+    
     const key = window.localStorage.getItem("elevenLabsKey");
     if (key) setElevenLabsKey(key);
-
+    
     const savedOpenRouterKey = localStorage.getItem('openRouterKey');
     if (savedOpenRouterKey) setOpenRouterKey(savedOpenRouterKey);
-
+    
     const savedBackground = localStorage.getItem('backgroundImage');
     if (savedBackground) setBackgroundImage(savedBackground);
-
+    
     const savedUiColor = localStorage.getItem('uiColor');
     if (savedUiColor) setUiColor(savedUiColor);
   }, []);
 
   // Guardado de datos en localStorage
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") return; // Asegurar que solo corra en el cliente
     process.nextTick(() => {
-      try {
-        window.localStorage.setItem(
-          "chatVRMParams",
-          JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId })
-        );
-        window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
-        window.localStorage.setItem("uiColor", uiColor);
-      } catch (e) {
-        console.warn("Failed to write chatVRMParams to localStorage", e);
-      }
+      window.localStorage.setItem(
+        "chatVRMParams",
+        JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId })
+      );
+      window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
+      window.localStorage.setItem("uiColor", uiColor);
     });
   }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor]);
 
@@ -189,6 +182,7 @@ export default function Home() {
         );
       } catch (error) {
         setIsAISpeaking(false);
+        // Manejo de errores de ElevenLabs
         const errorMessage = error instanceof Error ? error.message : "Error desconocido";
         console.error('Error during AI speech (ElevenLabs):', errorMessage);
 
@@ -380,9 +374,9 @@ export default function Home() {
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
       <Head>
+        {/* Inyecta la variable CSS para el color de la IU */}
         <style>{`:root { --main-ui-color: ${uiColor}; }`}</style>
       </Head>
-
       <Meta />
       <Introduction
         openAiKey={openAiKey}
@@ -394,9 +388,8 @@ export default function Home() {
       <MessageInputContainer
         isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
         onChatProcessStart={handleSendChat}
-        // NOTA: Se ha eliminado isUiVisible={isUiVisible}
+        // La prop 'isUiVisible' se ha eliminado de este componente
       />
-
       <Menu
         openAiKey={openAiKey}
         elevenLabsKey={elevenLabsKey}
@@ -412,7 +405,7 @@ export default function Home() {
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
         
-        {/* Usamos el nombre correcto para resolver el error de tipado anterior */}
+        {/* CORRECCIÓN FINAL: Cambiado el nombre de la prop para el tipado correcto */}
         onChangeKoeiromapParam={setKoeiroParam}
         
         handleClickResetChatLog={() => setChatLog([])}
@@ -422,15 +415,14 @@ export default function Home() {
         onTokensUpdate={handleTokensUpdate}
         onChatMessage={handleSendChat}
         onChangeOpenRouterKey={handleOpenRouterKeyChange}
+        // Nuevas props
         selectedModelId={selectedModelId}
         onChangeSelectedModelId={setSelectedModelId}
         onDeleteAllData={handleDeleteAllData}
         uiColor={uiColor}
         onChangeUiColor={setUiColor}
-        // NOTA: Se ha eliminado isUiVisible={isUiVisible}
+        // La prop 'isUiVisible' se ha eliminado de este componente
       />
-
-      {/* NOTA: Se muestra siempre el GitHubLink ahora */}
       <GitHubLink />
 
       {errorDialog && (
