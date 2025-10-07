@@ -1,10 +1,12 @@
+// src/components/menu.tsx
+
 import { IconButton } from "./iconButton";
 import { Message } from "@/features/messages/messages";
 import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
 import { KoeiroParam } from "@/features/constants/koeiroParam";
 import { ChatLog } from "./chatLog";
 import React, { useCallback, useContext, useRef, useState, useEffect } from "react";
-import { Settings } from "./settings";
+import { Settings } from "./settings"; 
 import { ViewerContext } from "@/features/vrmViewer/viewerContext";
 import { AssistantText } from "./assistantText";
 
@@ -48,10 +50,10 @@ export const Menu = ({
   assistantMessage,
   selectedModelId,
   uiColor,
-  isUiVisible, // <-- RECIBIR PROP
+  isUiVisible,
   onChangeSystemPrompt,
-  onChangeAiKey,
-  onChangeElevenLabsKey,
+  onChangeAiKey, // <--- Destructuring de la prop
+  onChangeElevenLabsKey, // <--- Destructuring de la prop
   onChangeChatLog,
   onChangeElevenLabsParam,
   onChangeKoeiromapParam,
@@ -70,6 +72,23 @@ export const Menu = ({
   const [showChatLog, setShowChatLog] = useState(false);
   const { viewer } = useContext(ViewerContext);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Nuevo estado para la animación de cierre (unmount delay)
+  const [isAnimatingOut, setIsAnimatingOut] = useState(false);
+
+  // Función para iniciar la animación de cierre y luego desmontar
+  const handleCloseSettings = useCallback(() => {
+    setIsAnimatingOut(true);
+    // Espera el tiempo de la animación (500ms) antes de desmontar
+    setTimeout(() => {
+      setShowSettings(false);
+      setIsAnimatingOut(false);
+    }, 500);
+  }, []);
+
+  const handleClickOpenSettings = useCallback(() => {
+    setShowSettings(true);
+  }, []);
 
   useEffect(() => {
     const savedBackground = localStorage.getItem('backgroundImage');
@@ -83,20 +102,6 @@ export const Menu = ({
       onChangeSystemPrompt(event.target.value);
     },
     [onChangeSystemPrompt]
-  );
-
-  const handleAiKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeAiKey(event.target.value);
-    },
-    [onChangeAiKey]
-  );
-
-  const handleElevenLabsKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeElevenLabsKey(event.target.value);
-    },
-    [onChangeElevenLabsKey]
   );
 
   const handleElevenLabsVoiceChange = useCallback(
@@ -160,7 +165,7 @@ export const Menu = ({
             iconName="24/Menu"
             label="Settings"
             isProcessing={false}
-            onClick={() => setShowSettings(true)}
+            onClick={handleClickOpenSettings} 
             color={uiColor}
           ></IconButton>
           {showChatLog ? (
@@ -184,38 +189,50 @@ export const Menu = ({
         </div>
       </div>
       {showChatLog && <ChatLog messages={chatLog} />}
-      {showSettings && (
-        <Settings
-          openAiKey={openAiKey}
-          elevenLabsKey={elevenLabsKey}
-          openRouterKey={openRouterKey}
-          elevenLabsParam={elevenLabsParam}
-          chatLog={chatLog}
-          systemPrompt={systemPrompt}
-          koeiroParam={koeiroParam}
-          onClickClose={() => setShowSettings(false)}
-          onChangeAiKey={handleAiKeyChange}
-          onChangeElevenLabsKey={handleElevenLabsKeyChange}
-          onChangeElevenLabsVoice={handleElevenLabsVoiceChange}
-          onChangeSystemPrompt={handleChangeSystemPrompt}
-          onChangeChatLog={onChangeChatLog}
-          onChangeKoeiroParam={handleChangeKoeiroParam}
-          onClickOpenVrmFile={handleClickOpenVrmFile}
-          onClickResetChatLog={handleClickResetChatLog}
-          onClickResetSystemPrompt={handleClickResetSystemPrompt}
-          backgroundImage={backgroundImage}
-          onChangeBackgroundImage={handleBackgroundImageChange}
-          onTokensUpdate={onTokensUpdate}
-          onChatMessage={onChatMessage}
-          onChangeOpenRouterKey={onChangeOpenRouterKey}
-          // Nuevas props
-          selectedModelId={selectedModelId}
-          onChangeSelectedModelId={onChangeSelectedModelId}
-          onDeleteAllData={onDeleteAllData}
-          uiColor={uiColor}
-          onChangeUiColor={onChangeUiColor}
-        />
+      
+      {/* --- Lógica de la Animación del Menú de Opciones (Settings) --- */}
+      {(showSettings || isAnimatingOut) && (
+        <div 
+          className={`fixed inset-0 z-40 flex items-end justify-center transition-all duration-500 ease-in-out ${
+            showSettings ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full'
+          }`}
+        >
+          <Settings
+            openAiKey={openAiKey}
+            elevenLabsKey={elevenLabsKey}
+            openRouterKey={openRouterKey}
+            elevenLabsParam={elevenLabsParam}
+            chatLog={chatLog}
+            systemPrompt={systemPrompt}
+            koeiroParam={koeiroParam}
+            onClickClose={handleCloseSettings} // Función con delay para cerrar
+            
+            // CORRECCIÓN DEL ERROR DE TIPO: Pasar las props directamente (aceptan string)
+            onChangeAiKey={onChangeAiKey} 
+            onChangeElevenLabsKey={onChangeElevenLabsKey} 
+            
+            onChangeElevenLabsVoice={handleElevenLabsVoiceChange}
+            onChangeSystemPrompt={handleChangeSystemPrompt}
+            onChangeChatLog={onChangeChatLog}
+            onChangeKoeiroParam={handleChangeKoeiroParam}
+            onClickOpenVrmFile={handleClickOpenVrmFile}
+            onClickResetChatLog={handleClickResetChatLog}
+            onClickResetSystemPrompt={handleClickResetSystemPrompt}
+            backgroundImage={backgroundImage}
+            onChangeBackgroundImage={handleBackgroundImageChange}
+            onTokensUpdate={onTokensUpdate}
+            onChatMessage={onChatMessage}
+            onChangeOpenRouterKey={onChangeOpenRouterKey}
+            selectedModelId={selectedModelId}
+            onChangeSelectedModelId={onChangeSelectedModelId}
+            onDeleteAllData={onDeleteAllData}
+            uiColor={uiColor}
+            onChangeUiColor={onChangeUiColor}
+          />
+        </div>
       )}
+      {/* --------------------------------------------------- */}
+      
       {/* Mostrar mensaje del asistente solo si la IU es visible */}
       {!showChatLog && assistantMessage && isUiVisible && (
         <AssistantText message={assistantMessage} />
