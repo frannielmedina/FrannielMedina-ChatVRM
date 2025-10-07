@@ -1,60 +1,59 @@
 // src/components/iconButton.tsx
 
-import React from 'react';
-// Importación simplificada de tipos. Si esto falla, el paquete no está instalado correctamente.
-import { KnownIconType } from '@pixiv/qoish-icons'; 
+import React, { ButtonHTMLAttributes } from "react";
+// Importamos el tipo KnownIconType de tu librería original
+import { KnownIconType } from "@charcoal-ui/icons"; 
 
-// El tipo CustomIconName permite que el desarrollador use cualquier string,
-// incluso si no está en la lista oficial de KnownIconType.
-type CustomIconName = KnownIconType | (string & {}); 
+// 1. Definimos un tipo para el nombre del ícono que acepta:
+//    a) Las claves conocidas (oficiales)
+//    b) Cualquier string & {} (permite cualquier otra cadena de texto, como "24/MicFill")
+type CustomIconName = keyof KnownIconType | (string & {}); 
 
-// Componente dummy o Spinner que actúa como indicador de carga
+// Componente dummy o Spinner que actúa como indicador de carga (Necesario para el estado isProcessing)
 const ProcessingIndicator = ({ color }: { color: string }) => (
   <div
     className="w-4 h-4 rounded-full animate-spin border-2 mr-2"
+    // El color de borde superior usa el color principal, el resto es transparente
     style={{ borderTopColor: color, borderColor: 'transparent' }}
   ></div>
 );
 
-type Props = {
-  // Ahora iconName puede ser un KnownIconType o cualquier otra cadena de texto (string).
-  iconName: CustomIconName; 
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
+  iconName: CustomIconName; // Usamos el tipo corregido
   isProcessing: boolean;
   label?: string;
-  onClick: () => void;
-  disabled?: boolean;
-  color?: string;
-  className?: string; // Para Tailwind custom
+  // Añadimos 'color' y 'onClick' para compatibilidad con MessageInputContainer
+  color?: string; // Para aplicar el color dinámico de la UI
+  onClick: () => void; // Hacemos onClick obligatorio como en la implementación anterior
 };
 
 export const IconButton = ({
   iconName,
   isProcessing,
   label,
-  onClick,
+  color = 'var(--main-ui-color)', // Usamos la variable CSS global
   disabled = false,
-  color = 'var(--main-ui-color)',
-  className = '',
+  onClick,
+  className = '', // Para asegurar que className exista
+  ...rest
 }: Props) => {
   const finalColor = color;
   const opacity = disabled ? 'opacity-50' : 'opacity-100';
 
   return (
     <button
-      className={`flex items-center justify-center p-3 rounded-xl shadow-md transition-all duration-200 ${opacity} ${className}`}
-      style={{ backgroundColor: finalColor, color: '#ffffff' }}
+      {...rest}
       onClick={onClick}
       disabled={disabled}
+      // Aplicamos el color dinámico y las clases necesarias
+      className={`flex items-center justify-center p-3 rounded-xl shadow-md transition-all duration-200 ${opacity} ${className}`}
+      style={{ backgroundColor: finalColor, color: '#ffffff' }}
     >
       {isProcessing ? (
         <ProcessingIndicator color="#ffffff" />
       ) : (
-        // Forzamos el tipo 'as string' para garantizar que el componente DOM acepte la cadena.
-        // Esto es necesario porque 'pixiv-icon' es un elemento personalizado no conocido por React/TS.
-        <pixiv-icon 
-          name={iconName as string} 
-          scale="1"
-        ></pixiv-icon>
+        // Forzamos el tipo 'as string' para que el web component lo acepte sin error de TS
+        <pixiv-icon name={iconName as string} scale="1"></pixiv-icon>
       )}
       {label && <div className="mx-4 font-M_PLUS_2 font-bold">{label}</div>}
     </button>
