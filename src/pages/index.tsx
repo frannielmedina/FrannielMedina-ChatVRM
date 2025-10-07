@@ -437,8 +437,7 @@ export default function Home() {
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
         
-        {/* CORRECCIÓN: Cambiado de 'onChangeKoeiroParam' a 'onChangeKoeiromapParam' 
-            para resolver el error de tipado con el componente Menu/Settings. */}
+        {/* CORRECCIÓN: Usamos el nombre de prop largo para resolver el error de tipado. */}
         onChangeKoeiromapParam={setKoeiroParam} 
         
         handleClickResetChatLog={() => setChatLog([])}
