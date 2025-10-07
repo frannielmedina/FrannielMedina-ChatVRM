@@ -62,8 +62,8 @@ export default function Home() {
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
-  const [isUiVisible, setIsUiVisible] = useState(true); // NUEVO: Estado de visibilidad de la IU
-  const inactivityTimerRef = useRef<number | null>(null); // NUEVO: Referencia al temporizador
+  const [isUiVisible, setIsUiVisible] = useState(true); // Estado de visibilidad de la IU
+  const inactivityTimerRef = useRef<number | null>(null); // Referencia al temporizador
 
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -419,7 +419,7 @@ export default function Home() {
       <MessageInputContainer
         isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
         onChatProcessStart={handleSendChat}
-        isUiVisible={isUiVisible} // <-- PROP DE VISIBILIDAD
+        isUiVisible={isUiVisible} 
       />
       <Menu
         openAiKey={openAiKey}
@@ -435,7 +435,7 @@ export default function Home() {
         onChangeSystemPrompt={setSystemPrompt}
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
-        onChangeKoeiromapParam={setKoeiroParam}
+        onChangeKoeiroParam={setKoeiroParam}
         handleClickResetChatLog={() => setChatLog([])}
         handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
         backgroundImage={backgroundImage}
@@ -449,7 +449,7 @@ export default function Home() {
         onDeleteAllData={handleDeleteAllData}
         uiColor={uiColor}
         onChangeUiColor={setUiColor}
-        isUiVisible={isUiVisible} // <-- PROP DE VISIBILIDAD
+        isUiVisible={isUiVisible} 
       />
       {/* Ocultar GitHubLink también si la IU no es visible */}
       {isUiVisible && <GitHubLink />}
@@ -465,4 +465,4 @@ export default function Home() {
       )}
     </div>
   );
-}
+      }
