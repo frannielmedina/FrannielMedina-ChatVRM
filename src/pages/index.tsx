@@ -439,7 +439,10 @@ export default function Home() {
         onChangeSystemPrompt={setSystemPrompt}
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
-        onChangeKoeiroParam={setKoeiroParam}
+        
+        {/* LÍNEA CORREGIDA */}
+        onChangeKoeiromapParam={setKoeiroParam}
+        
         handleClickResetChatLog={() => setChatLog([])}
         handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
         backgroundImage={backgroundImage}
