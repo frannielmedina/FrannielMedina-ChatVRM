@@ -1,69 +1,103 @@
-import { IconButton } from "./iconButton";
+import { MessageInput } from "@/components/messageInput";
+import { useState, useEffect, useCallback, MouseEvent } from "react"; // Importamos MouseEvent
 
 type Props = {
-  userMessage: string;
-  isMicRecording: boolean;
   isChatProcessing: boolean;
-  onChangeUserMessage: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
-  onKeyDownUserMessage: (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onClickSendButton: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onClickMicButton: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onChatProcessStart: (text: string) => void;
 };
-export const MessageInput = ({
-  userMessage,
-  isMicRecording,
-  isChatProcessing,
-  onChangeUserMessage,
-  onKeyDownUserMessage,
-  onClickMicButton,
-  onClickSendButton,
-}: Props) => {
-  return (
-    <div className="absolute bottom-0 z-20 w-screen">
-      <div className="bg-base text-black">
-        <div className="mx-auto max-w-4xl p-16">
-          <div className="grid grid-flow-col gap-[8px] grid-cols-[min-content_1fr_min-content]">
-            <IconButton
-              iconName="24/Microphone"
-              className="bg-secondary hover:bg-secondary-hover active:bg-secondary-press disabled:bg-secondary-disabled"
-              isProcessing={isMicRecording}
-              disabled={isChatProcessing}
-              onClick={onClickMicButton}
-            />
-            <input
-              type="text"
-              placeholder="Message"
-              onChange={onChangeUserMessage}
-              onKeyDown={onKeyDownUserMessage}
-              disabled={isChatProcessing}
-              className="bg-surface1 hover:bg-surface1-hover focus:bg-surface1 disabled:bg-surface1-disabled disabled:text-primary-disabled rounded-16 w-full px-16 text-text-primary typography-16 font-M_PLUS_2 font-bold disabled"
-              value={userMessage}
-            ></input>
 
-            <IconButton
-              iconName="24/Send"
-              className="bg-secondary hover:bg-secondary-hover active:bg-secondary-press disabled:bg-secondary-disabled"
-              isProcessing={isChatProcessing}
-              disabled={isChatProcessing || !userMessage}
-              onClick={onClickSendButton}
-            />
-          </div>
-        </div>
-        <div className="py-4 bg-[#413D43] text-center text-white font-Montserrat">
-          powered by&nbsp;
-          <a target="_blank" href="https://openrouter.ai/" className="underline">
-            OpenRouter
-          </a>,&nbsp;
-          <a target="_blank" href="https://beta.elevenlabs.io/" className="underline">
-            ElevenLabs
-          </a>,&nbsp;
-          <a target="_blank" href="https://vroid.com/" className="underline">
-            VRoid
-          </a>
-        </div>
-      </div>
-    </div>
+/**
+ * テキスト入力と音声入力を提供する
+ *
+ * 音声認識の完了時は自動で送信し、返答文の生成中は入力を無効化する
+ *
+ */
+export const MessageInputContainer = ({
+  isChatProcessing,
+  onChatProcessStart,
+}: Props) => {
+  const [userMessage, setUserMessage] = useState("");
+  const [speechRecognition, setSpeechRecognition] =
+    useState<SpeechRecognition>();
+  const [isMicRecording, setIsMicRecording] = useState(false);
+
+  // 音声認識の結果を処理する
+  const handleRecognitionResult = useCallback(
+    (event: SpeechRecognitionEvent) => {
+      const text = event.results[0][0].transcript;
+      setUserMessage(text);
+
+      // 発言の終了時
+      if (event.results[0].isFinal) {
+        setUserMessage(text);
+        // 返答文の生成を開始
+        onChatProcessStart(text);
+      }
+    },
+    [onChatProcessStart]
+  );
+
+  // 無音が続いた場合も終了する
+  const handleRecognitionEnd = useCallback(() => {
+    setIsMicRecording(false);
+  }, []);
+
+  // CORRECCIÓN: Se añade el tipado del evento del mouse.
+  // Esto resuelve el error de tipado con la prop onClick del botón.
+  const handleClickMicButton = useCallback((event: MouseEvent<HTMLButtonElement>) => {
+    if (isMicRecording) {
+      speechRecognition?.abort();
+      setIsMicRecording(false);
+
+      return;
+    }
+
+    speechRecognition?.start();
+    setIsMicRecording(true);
+  }, [isMicRecording, speechRecognition]);
+
+  const handleClickSendButton = useCallback(() => {
+    onChatProcessStart(userMessage);
+  }, [onChatProcessStart, userMessage]);
+
+  useEffect(() => {
+    const SpeechRecognition =
+      window.webkitSpeechRecognition || window.SpeechRecognition;
+
+    // FirefoxなどSpeechRecognition非対応環境対策
+    if (!SpeechRecognition) {
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = true; // 認識の途中結果を返す
+    recognition.continuous = false; // 発言の終了時に認識を終了する
+
+    recognition.addEventListener("result", handleRecognitionResult);
+    recognition.addEventListener("end", handleRecognitionEnd);
+
+    setSpeechRecognition(recognition);
+  }, [handleRecognitionResult, handleRecognitionEnd]);
+
+  useEffect(() => {
+    if (!isChatProcessing) {
+      setUserMessage("");
+    }
+  }, [isChatProcessing]);
+
+  return (
+    <MessageInput
+      userMessage={userMessage}
+      isChatProcessing={isChatProcessing}
+      isMicRecording={isMicRecording}
+      onKeyDownUserMessage={(e) => {
+        if (e.key === "Enter") {
+          handleClickSendButton();
+        }
+      }}
+      onChangeUserMessage={(e) => setUserMessage(e.target.value)}
+      onClickMicButton={handleClickMicButton}
+      onClickSendButton={handleClickSendButton}
+    />
   );
 };
