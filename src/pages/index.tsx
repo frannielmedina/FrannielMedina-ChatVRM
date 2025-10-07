@@ -62,9 +62,8 @@ export default function Home() {
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
-  const [isUiVisible, setIsUiVisible] = useState(true); // Estado de visibilidad de la IU
-  const inactivityTimerRef = useRef<number | null>(null); // Referencia al temporizador
-
+  // NOTA: Se ha eliminado el estado isUiVisible y el timerRef.
+  
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('openRouterKey') || '';
@@ -84,34 +83,7 @@ export default function Home() {
   };
 
   // --- Lógica de Inactividad del Cursor ---
-  useEffect(() => {
-    const INACTIVITY_TIMEOUT_MS = 60000; // 60 segundos (1 minuto)
-
-    const resetTimer = () => {
-      setIsUiVisible(true);
-      if (inactivityTimerRef.current !== null) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-      inactivityTimerRef.current = window.setTimeout(() => {
-        setIsUiVisible(false);
-      }, INACTIVITY_TIMEOUT_MS);
-    };
-
-    document.addEventListener('mousemove', resetTimer);
-    document.addEventListener('keydown', resetTimer);
-    document.addEventListener('click', resetTimer);
-
-    resetTimer();
-
-    return () => {
-      document.removeEventListener('mousemove', resetTimer);
-      document.removeEventListener('keydown', resetTimer);
-      document.removeEventListener('click', resetTimer);
-      if (inactivityTimerRef.current !== null) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-    };
-  }, []);
+  // NOTA: Se ha eliminado completamente el useEffect de inactividad.
   // ------------------------------------------------------------------
 
   // Carga inicial de datos desde localStorage
@@ -422,7 +394,7 @@ export default function Home() {
       <MessageInputContainer
         isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
         onChatProcessStart={handleSendChat}
-        isUiVisible={isUiVisible}
+        // NOTA: Se ha eliminado isUiVisible={isUiVisible}
       />
 
       <Menu
@@ -440,7 +412,7 @@ export default function Home() {
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
         
-        {/* LÍNEA CORREGIDA */}
+        {/* Usamos el nombre correcto para resolver el error de tipado anterior */}
         onChangeKoeiromapParam={setKoeiroParam}
         
         handleClickResetChatLog={() => setChatLog([])}
@@ -455,10 +427,11 @@ export default function Home() {
         onDeleteAllData={handleDeleteAllData}
         uiColor={uiColor}
         onChangeUiColor={setUiColor}
-        isUiVisible={isUiVisible}
+        // NOTA: Se ha eliminado isUiVisible={isUiVisible}
       />
 
-      {isUiVisible && <GitHubLink />}
+      {/* NOTA: Se muestra siempre el GitHubLink ahora */}
+      <GitHubLink />
 
       {errorDialog && (
         <ErrorDialog
