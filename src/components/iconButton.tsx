@@ -1,13 +1,12 @@
 import { KnownIconType as BaseKnownIconType } from "@charcoal-ui/icons";
 import { ButtonHTMLAttributes } from "react";
 
-// 🎤 Agregamos los iconos extra que no vienen en @charcoal-ui/icons
+// 🎤 Iconos adicionales que no existen en BaseKnownIconType
 type ExtraIcons = {
   "24/MicFill": unknown;
   "24/MicOutline": unknown;
 };
 
-// Extendemos el tipo original con los nuevos
 type ExtendedKnownIconType = BaseKnownIconType & ExtraIcons;
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -32,7 +31,8 @@ export const IconButton = ({
       {isProcessing ? (
         <pixiv-icon name={"24/Dot"} scale="1"></pixiv-icon>
       ) : (
-        <pixiv-icon name={iconName} scale="1"></pixiv-icon>
+        // 👇 Forzamos el tipo aquí para que acepte tus extras
+        <pixiv-icon name={iconName as keyof BaseKnownIconType | string} scale="1"></pixiv-icon>
       )}
       {label && <div className="mx-4 font-M_PLUS_2 font-bold">{label}</div>}
     </button>
