@@ -437,7 +437,7 @@ export default function Home() {
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
         
-        {/* CORRECCIÓN: Usamos el nombre de prop largo para resolver el error de tipado. */}
+        {/* LÍNEA CORREGIDA PARA EL ERROR DE PARSING Y TIPADO */}
         onChangeKoeiromapParam={setKoeiroParam} 
         
         handleClickResetChatLog={() => setChatLog([])}
