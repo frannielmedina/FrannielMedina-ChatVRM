@@ -7,7 +7,6 @@ import { KoeiroParam } from "@/features/constants/koeiroParam";
 import { GitHubLink } from "./githubLink";
 import { IconButton } from "./iconButton";
 import { TextButton } from "./textButton";
-import { SimpleSlider } from "./simpleSlider";
 import { ModelSelector } from "./modelSelector";
 import { OpenRouterModels } from "@/features/constants/openRouterModels";
 import { ColorPicker } from "./colorPicker";
@@ -24,11 +23,12 @@ type Props = {
   selectedModelId: string;
   uiColor: string;
   onClickClose: () => void;
-  // Estas props aceptan un string, como está corregido en menu.tsx
+  // Props que esperan un STRING
   onChangeAiKey: (key: string) => void; 
   onChangeElevenLabsKey: (key: string) => void; 
-  onChangeElevenLabsVoice: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   onChangeSystemPrompt: (systemPrompt: string) => void;
+  // Otras props
+  onChangeElevenLabsVoice: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   onChangeChatLog: (index: number, text: string) => void;
   onChangeKoeiroParam: (x: number, y: number) => void;
   onClickOpenVrmFile: () => void;
@@ -44,7 +44,6 @@ type Props = {
   onChangeUiColor: (color: string) => void;
 };
 
-// Definición de las pestañas
 type Tab = 'API' | 'Appearance' | 'SystemPrompt' | 'Model' | 'About';
 
 export const Settings = ({
@@ -83,12 +82,35 @@ export const Settings = ({
   const handleTabChange = useCallback((tab: Tab) => {
     if (tab === activeTab) return;
     setIsTabChanging(true);
-    // Un pequeño retardo para mostrar la animación de fade out/in (200ms)
+    // Retardo para la transición de opacidad
     setTimeout(() => {
       setActiveTab(tab);
       setIsTabChanging(false);
     }, 200); 
   }, [activeTab]);
+
+  // --- Funciones locales para manejar los eventos de INPUTS (Solución al error de tipo) ---
+  const handleAiKeyChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChangeAiKey(event.target.value);
+    },
+    [onChangeAiKey]
+  );
+
+  const handleElevenLabsKeyChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChangeElevenLabsKey(event.target.value);
+    },
+    [onChangeElevenLabsKey]
+  );
+  
+  const handleChangeSystemPrompt = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChangeSystemPrompt(event.target.value);
+    },
+    [onChangeSystemPrompt]
+  );
+  // --- FIN Funciones locales ---
 
   // Componente para el encabezado de las pestañas
   const TabHeader = ({ tab, label }: { tab: Tab, label: string }) => (
@@ -103,21 +125,6 @@ export const Settings = ({
     >
       {label}
     </button>
-  );
-
-  // Funciones locales para manejar los cambios de input (extraen el valor del evento)
-  const handleAiKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeAiKey(event.target.value);
-    },
-    [onChangeAiKey]
-  );
-
-  const handleElevenLabsKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeElevenLabsKey(event.target.value);
-    },
-    [onChangeElevenLabsKey]
   );
 
   // Componente para renderizar el contenido de la pestaña activa
@@ -140,7 +147,7 @@ export const Settings = ({
             <input
               type="text"
               value={elevenLabsKey}
-              onChange={handleElevenLabsKeyChange} // Usar la función local para extraer el valor
+              onChange={handleElevenLabsKeyChange} // Usa la función local
               className="bg-white border border-gray-300 rounded-md p-2 w-full mb-4 focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
             />
 
@@ -148,7 +155,7 @@ export const Settings = ({
             <input
               type="text"
               value={openAiKey}
-              onChange={handleAiKeyChange} // Usar la función local para extraer el valor
+              onChange={handleAiKeyChange} // Usa la función local
               className="bg-white border border-gray-300 rounded-md p-2 w-full mb-4 focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
             />
           </>
@@ -188,7 +195,7 @@ export const Settings = ({
             <div className="text-sm font-bold text-gray-800">System Prompt</div>
             <textarea
               value={systemPrompt}
-              onChange={(e) => onChangeSystemPrompt(e.target.value)}
+              onChange={handleChangeSystemPrompt} // Usa la función local corregida
               rows={10}
               className="bg-white border border-gray-300 rounded-md p-2 w-full mb-4 focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
             ></textarea>
@@ -218,7 +225,6 @@ export const Settings = ({
                 {/* Preview de fondo si existe */}
                 {backgroundImage && (
                     <div className="w-16 h-10 border rounded overflow-hidden relative">
-                        {/* Se mantiene <img> aquí por la advertencia, el foco es el logo en About */}
                         <img 
                             src={backgroundImage} 
                             alt="Fondo actual" 
