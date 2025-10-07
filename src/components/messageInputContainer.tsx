@@ -1,7 +1,6 @@
 // src/components/messageInputContainer.tsx
 
 import React, { useState, useCallback } from 'react';
-// import { useSpeak } from '@/features/messages/useSpeak'; // <-- ELIMINADO: Módulo no encontrado
 import { IconButton } from './iconButton'; 
 
 // --- IMPLEMENTACIÓN DUMMY PARA PERMITIR LA COMPILACIÓN ---
@@ -14,7 +13,8 @@ const useSpeak = () => {
     };
     const stopRecording = () => {
         console.log("Dummy Recording Stopped. (Restore useSpeak.ts for actual function)");
-        // Devuelve un string vacío para simular que no se reconoció nada, o un mensaje de prueba
+        // Devuelve un string vacío para simular que no se reconoció nada, o un mensaje de prueba.
+        // Si quieres probar un texto, cámbialo aquí: return Promise.resolve("Este es un mensaje de prueba.");
         return Promise.resolve(""); 
     };
     return { startRecording, stopRecording };
