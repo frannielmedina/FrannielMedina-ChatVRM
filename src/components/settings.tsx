@@ -8,7 +8,8 @@ import { GitHubLink } from "./githubLink";
 import { IconButton } from "./iconButton";
 import { TextButton } from "./textButton";
 import { ModelSelector } from "./modelSelector";
-import { OpenRouterModels } from "@/features/constants/openRouterModels";
+// CORRECCIÓN: Usamos 'OPENROUTER_MODELS' que es el nombre de la constante exportada.
+import { OPENROUTER_MODELS } from "@/features/constants/openRouterModels";
 import { ColorPicker } from "./colorPicker";
 import Image from 'next/image';
 
@@ -89,7 +90,7 @@ export const Settings = ({
     }, 200); 
   }, [activeTab]);
 
-  // --- Funciones locales para manejar los eventos de INPUTS (Solución al error de tipo) ---
+  // --- Funciones locales para manejar los eventos de INPUTS ---
   const handleAiKeyChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       onChangeAiKey(event.target.value);
@@ -147,7 +148,7 @@ export const Settings = ({
             <input
               type="text"
               value={elevenLabsKey}
-              onChange={handleElevenLabsKeyChange} // Usa la función local
+              onChange={handleElevenLabsKeyChange}
               className="bg-white border border-gray-300 rounded-md p-2 w-full mb-4 focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
             />
 
@@ -155,7 +156,7 @@ export const Settings = ({
             <input
               type="text"
               value={openAiKey}
-              onChange={handleAiKeyChange} // Usa la función local
+              onChange={handleAiKeyChange}
               className="bg-white border border-gray-300 rounded-md p-2 w-full mb-4 focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
             />
           </>
@@ -165,7 +166,8 @@ export const Settings = ({
           <>
             <h2 className="text-xl font-bold mb-4" style={{ color: uiColor }}>Modelo de Lenguaje (LLM)</h2>
             <ModelSelector
-                models={OpenRouterModels}
+                // Usamos la constante corregida OPENROUTER_MODELS
+                models={OPENROUTER_MODELS}
                 selectedModelId={selectedModelId}
                 onChange={onChangeSelectedModelId}
             />
@@ -195,7 +197,7 @@ export const Settings = ({
             <div className="text-sm font-bold text-gray-800">System Prompt</div>
             <textarea
               value={systemPrompt}
-              onChange={handleChangeSystemPrompt} // Usa la función local corregida
+              onChange={handleChangeSystemPrompt}
               rows={10}
               className="bg-white border border-gray-300 rounded-md p-2 w-full mb-4 focus:ring-[var(--main-ui-color)] focus:border-[var(--main-ui-color)]"
             ></textarea>
