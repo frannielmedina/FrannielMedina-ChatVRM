@@ -436,10 +436,8 @@ export default function Home() {
         onChangeSystemPrompt={setSystemPrompt}
         onChangeChatLog={handleChangeChatLog}
         onChangeElevenLabsParam={setElevenLabsParam}
-        
         {/* LÍNEA CORREGIDA PARA EL ERROR DE PARSING Y TIPADO */}
-        onChangeKoeiromapParam={setKoeiroParam} 
-        
+        onChangeKoeiroParam={setKoeiroParam}
         handleClickResetChatLog={() => setChatLog([])}
         handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
         backgroundImage={backgroundImage}
@@ -447,7 +445,7 @@ export default function Home() {
         onTokensUpdate={handleTokensUpdate}
         onChatMessage={handleSendChat}
         onChangeOpenRouterKey={handleOpenRouterKeyChange}
-        // Nuevas props
+        {/* Nuevas props */}
         selectedModelId={selectedModelId}
         onChangeSelectedModelId={setSelectedModelId}
         onDeleteAllData={handleDeleteAllData}
