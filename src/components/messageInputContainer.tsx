@@ -1,17 +1,17 @@
-import React, { useState, useCallback } from 'react';
-import { IconButton } from './iconButton'; 
+import React, { useState, useCallback } from "react";
+import { IconButton } from "./iconButton";
 
 // --- IMPLEMENTACIÓN DUMMY PARA PERMITIR LA COMPILACIÓN ---
 const useSpeak = () => {
-    const startRecording = () => {
-        console.log("Dummy Recording Started. (Restore useSpeak.ts for actual function)");
-        return Promise.resolve();
-    };
-    const stopRecording = () => {
-        console.log("Dummy Recording Stopped. (Restore useSpeak.ts for actual function)");
-        return Promise.resolve(""); 
-    };
-    return { startRecording, stopRecording };
+  const startRecording = () => {
+    console.log("Dummy Recording Started. (Restore useSpeak.ts for actual function)");
+    return Promise.resolve();
+  };
+  const stopRecording = () => {
+    console.log("Dummy Recording Stopped. (Restore useSpeak.ts for actual function)");
+    return Promise.resolve("");
+  };
+  return { startRecording, stopRecording };
 };
 // --------------------------------------------------------
 
@@ -26,9 +26,9 @@ export const MessageInputContainer = ({
   onChatProcessStart,
   isUiVisible,
 }: Props) => {
-  const [chatText, setChatText] = useState('');
+  const [chatText, setChatText] = useState("");
   const [isMicProcessing, setIsMicProcessing] = useState(false);
-  
+
   const { startRecording, stopRecording } = useSpeak();
   const uiColor = "var(--main-ui-color)";
 
@@ -40,26 +40,26 @@ export const MessageInputContainer = ({
   );
 
   const handleSend = useCallback(() => {
-    if (chatText.trim() === '') return;
+    if (chatText.trim() === "") return;
     onChatProcessStart(chatText);
-    setChatText('');
+    setChatText("");
   }, [chatText, onChatProcessStart]);
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
+      if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
         handleSend();
       }
     },
     [handleSend]
   );
-  
+
   const handleMicClick = useCallback(async () => {
     if (isMicProcessing) {
       setIsMicProcessing(false);
-      const text = await stopRecording(); 
-      if (text && text.trim() !== '') {
+      const text = await stopRecording();
+      if (text && text.trim() !== "") {
         onChatProcessStart(text);
       }
     } else {
@@ -68,15 +68,14 @@ export const MessageInputContainer = ({
     }
   }, [isMicProcessing, onChatProcessStart, startRecording, stopRecording]);
 
-
   return (
-    <div 
+    <div
       className={`absolute bottom-0 z-10 w-full p-4 md:p-8 transition-opacity duration-500 ${
-        isUiVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        isUiVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
     >
       <div className="mx-auto flex w-full max-w-lg items-end justify-center gap-4">
-        
+        {/* Botón de Micrófono */}
         {!isChatProcessing && (
           <IconButton
             iconName={isMicProcessing ? "24/MicFill" : "24/MicOutline"}
@@ -87,7 +86,8 @@ export const MessageInputContainer = ({
             className="flex-shrink-0"
           />
         )}
-        
+
+        {/* Área de Texto y Botón de Enviar */}
         <div className="flex w-full items-end gap-2 bg-white p-2 rounded-xl shadow-lg">
           <textarea
             className="w-full bg-transparent resize-none h-10 p-2 text-gray-800 focus:outline-none"
@@ -102,7 +102,7 @@ export const MessageInputContainer = ({
             iconName="24/Send"
             isProcessing={isChatProcessing}
             onClick={handleSend}
-            disabled={chatText.trim() === '' || isChatProcessing || isMicProcessing}
+            disabled={chatText.trim() === "" || isChatProcessing || isMicProcessing}
             color={uiColor}
             className="flex-shrink-0"
           />
