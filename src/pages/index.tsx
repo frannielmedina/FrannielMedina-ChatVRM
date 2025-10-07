@@ -419,7 +419,7 @@ export default function Home() {
       <MessageInputContainer
         isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
         onChatProcessStart={handleSendChat}
-        isUiVisible={isUiVisible} // <-- NUEVO PROP
+        isUiVisible={isUiVisible} // <-- PROP DE VISIBILIDAD
       />
       <Menu
         openAiKey={openAiKey}
@@ -449,7 +449,7 @@ export default function Home() {
         onDeleteAllData={handleDeleteAllData}
         uiColor={uiColor}
         onChangeUiColor={setUiColor}
-        isUiVisible={isUiVisible} // <-- NUEVO PROP
+        isUiVisible={isUiVisible} // <-- PROP DE VISIBILIDAD
       />
       {/* Ocultar GitHubLink también si la IU no es visible */}
       {isUiVisible && <GitHubLink />}
