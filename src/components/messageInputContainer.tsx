@@ -1,13 +1,13 @@
 // src/components/messageInputContainer.tsx
 
 import React, { useState, useCallback } from 'react';
-import { useSpeak } from '@/features/messages/useSpeak'; // Asume que tienes este hook
-import { IconButton } from './iconButton'; // Asume que tienes este componente
+import { useSpeak } from '@/features/messages/useSpeak'; 
+import { IconButton } from './iconButton'; 
 
 type Props = {
   isChatProcessing: boolean;
   onChatProcessStart: (text: string) => void;
-  isUiVisible: boolean; // <-- NUEVO PROP: Para la animación de inactividad
+  isUiVisible: boolean; // <-- PROP DE VISIBILIDAD
 };
 
 export const MessageInputContainer = ({
@@ -18,8 +18,7 @@ export const MessageInputContainer = ({
   const [chatText, setChatText] = useState('');
   const [isMicProcessing, setIsMicProcessing] = useState(false);
   
-  // Asume que useSpeak maneja la grabación de voz y devuelve funciones para iniciar/detener.
-  // Si no tienes este hook, el código de voz no funcionará.
+  // Asume que useSpeak está correctamente definido
   const { startRecording, stopRecording } = useSpeak();
   
   // Obtener el color de la UI para los IconButtons (usando variable CSS)
