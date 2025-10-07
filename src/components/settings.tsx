@@ -14,7 +14,19 @@ import { getVoices } from "@/features/elevenlabs/elevenlabs";
 import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
 import { RestreamTokens } from "./restreamTokens";
 import Cookies from 'js-cookie';
+import { OPENROUTER_MODELS } from "@/features/constants/openRouterModels"; // Nuevo
 
+// Definición de las pestañas
+const TABS = [
+  { id: 'general', label: 'General', icon: '24/Setting' },
+  { id: 'api', label: 'API', icon: '24/Key' },
+  { id: 'personality', label: 'Personalidad', icon: '24/Person' },
+  { id: 'customization', label: 'Personalización', icon: '24/Image' },
+  { id: 'stream', label: 'Stream', icon: '24/Play' },
+  { id: 'about', label: 'Acerca de', icon: '24/Info' },
+];
+
+// Tipos de las propiedades (se añaden nuevas)
 type Props = {
   openAiKey: string;
   elevenLabsKey: string;
@@ -23,6 +35,8 @@ type Props = {
   chatLog: Message[];
   elevenLabsParam: ElevenLabsParam;
   koeiroParam: KoeiroParam;
+  selectedModelId: string; // Nuevo
+  uiColor: string; // Nuevo
   onClickClose: () => void;
   onChangeAiKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -31,15 +45,19 @@ type Props = {
   onChangeSystemPrompt: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onChangeChatLog: (index: number, text: string) => void;
   onChangeKoeiroParam: (x: number, y: number) => void;
+  onChangeSelectedModelId: (id: string) => void; // Nuevo
+  onChangeUiColor: (color: string) => void; // Nuevo
   onClickOpenVrmFile: () => void;
   onClickResetChatLog: () => void;
   onClickResetSystemPrompt: () => void;
+  onDeleteAllData: () => void; // Nuevo
   backgroundImage: string;
   onChangeBackgroundImage: (image: string) => void;
   onRestreamTokensUpdate?: (tokens: { access_token: string; refresh_token: string; } | null) => void;
   onTokensUpdate: (tokens: any) => void;
   onChatMessage: (message: string) => void;
 };
+
 export const Settings = ({
   openAiKey,
   elevenLabsKey,
@@ -48,6 +66,8 @@ export const Settings = ({
   systemPrompt,
   elevenLabsParam,
   koeiroParam,
+  selectedModelId,
+  uiColor,
   onClickClose,
   onChangeSystemPrompt,
   onChangeAiKey,
@@ -56,9 +76,12 @@ export const Settings = ({
   onChangeElevenLabsVoice,
   onChangeChatLog,
   onChangeKoeiroParam,
+  onChangeSelectedModelId,
+  onChangeUiColor,
   onClickOpenVrmFile,
   onClickResetChatLog,
   onClickResetSystemPrompt,
+  onDeleteAllData,
   backgroundImage,
   onChangeBackgroundImage,
   onRestreamTokensUpdate = () => {},
@@ -67,19 +90,16 @@ export const Settings = ({
 }: Props) => {
 
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState(TABS[0].id); // Estado para la pestaña activa
 
   useEffect(() => {
-    // Check if ElevenLabs API key exists before fetching voices
     if (elevenLabsKey) {
       getVoices(elevenLabsKey).then((data) => {
-        console.log('getVoices');
-        console.log(data);
-
         const voices = data.voices;
         setElevenLabsVoices(voices);
       });
     }
-  }, [elevenLabsKey]); // Added elevenLabsKey as a dependency
+  }, [elevenLabsKey]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -99,164 +119,320 @@ export const Settings = ({
     localStorage.removeItem('backgroundImage');
   };
 
+  const handleSaveOptions = () => {
+    localStorage.setItem('openRouterKey', openRouterKey);
+    localStorage.setItem('elevenLabsKey', elevenLabsKey);
+    localStorage.setItem('uiColor', uiColor);
+    // 'chatVRMParams' ya se guarda automáticamente en index.tsx (systemPrompt, model, etc.)
+    alert("Opciones guardadas con éxito en tu navegador.");
+  };
+
+  const handleLoadOptions = () => {
+    const savedOpenRouterKey = localStorage.getItem('openRouterKey');
+    if (savedOpenRouterKey) onChangeOpenRouterKey({ target: { value: savedOpenRouterKey } } as React.ChangeEvent<HTMLInputElement>);
+    const savedElevenLabsKey = localStorage.getItem('elevenLabsKey');
+    if (savedElevenLabsKey) onChangeElevenLabsKey({ target: { value: savedElevenLabsKey } } as React.ChangeEvent<HTMLInputElement>);
+    const savedUiColor = localStorage.getItem('uiColor');
+    if (savedUiColor) onChangeUiColor(savedUiColor);
+
+    // Recarga las opciones guardadas en 'chatVRMParams'
+    if (window.localStorage.getItem("chatVRMParams")) {
+        const params = JSON.parse(window.localStorage.getItem("chatVRMParams") as string);
+        onChangeSystemPrompt({ target: { value: params.systemPrompt || '' } } as React.ChangeEvent<HTMLTextAreaElement>);
+        onChangeSelectedModelId(params.selectedModelId || OPENROUTER_MODELS[0].id);
+        // ... otras opciones que quieres cargar ...
+    }
+
+    alert("Opciones cargadas desde tu navegador.");
+  };
+  
+  const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    onChangeUiColor(event.target.value);
+  };
+
   return (
-    <div className="absolute z-40 w-full h-full bg-white/80 backdrop-blur ">
-      <div className="absolute m-24">
+    <div className="absolute z-40 w-full h-full bg-white/80 backdrop-blur" style={{ color: 'var(--main-ui-color)' }}>
+      <div className="absolute m-4 md:m-8">
         <IconButton
           iconName="24/Close"
           isProcessing={false}
           onClick={onClickClose}
+          color="var(--main-ui-color)"
         ></IconButton>
       </div>
       <div className="max-h-full overflow-auto">
-        <div className="text-text1 max-w-3xl mx-auto px-24 py-64 ">
-          <div className="my-24 typography-32 font-bold">Settings</div>
-          <div className="my-24">
-            <div className="my-16 typography-20 font-bold">OpenRouter API</div>
-            <input
-              type="text"
-              placeholder="OpenRouter API key"
-              value={openRouterKey}
-              onChange={onChangeOpenRouterKey}
-              className="my-4 px-16 py-8 w-full h-40 bg-surface3 hover:bg-surface3-hover rounded-4 text-ellipsis"
-            ></input>
-            <div>
-              Enter your OpenRouter API key for custom access. You can get an API key at the&nbsp;
-              <Link
-                url="https://openrouter.ai/"
-                label="OpenRouter website"
-              />. By default, this app uses its own OpenRouter API key for people to try things out easily, but that may run of credits and need to be refilled.
-            </div>
-          </div>
-          <div className="my-24">
-            <div className="my-16 typography-20 font-bold">Eleven Labs API</div>
-            <input
-              type="text"
-              placeholder="ElevenLabs API key"
-              value={elevenLabsKey}
-              onChange={onChangeElevenLabsKey}
-              className="my-4 px-16 py-8 w-full h-40 bg-surface3 hover:bg-surface3-hover rounded-4 text-ellipsis"
-            ></input>
-            <div>
-              Enter your ElevenLabs API key to enable text to speech. You can get an API key at the&nbsp;
-              <Link
-                url="https://beta.elevenlabs.io/"
-                label="ElevenLabs website"
-              />.
-            </div>
-          </div>
-          <div className="my-40">
-            <div className="my-16 typography-20 font-bold">
-              Voice Selection
-            </div>
-            <div className="my-16">
-              Select among the voices in ElevenLabs (including custom voices):
-            </div>
-            <div className="my-8">
-              <select className="h-40 px-8"
-                id="select-dropdown"
-                onChange={onChangeElevenLabsVoice}
-                value={elevenLabsParam.voiceId}
-              >
-                {elevenLabsVoices.map((voice, index) => (
-                  <option key={index} value={voice.voice_id}>
-                    {voice.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="my-40">
-            <div className="my-16 typography-20 font-bold">
-              Character Model
-            </div>
-            <div className="my-8">
-              <TextButton onClick={onClickOpenVrmFile}>Open VRM</TextButton>
-            </div>
-          </div>
-          <div className="my-40">
-            <div className="my-8">
-              <div className="my-16 typography-20 font-bold">
-                Character Settings (System Prompt)
-              </div>
-              <TextButton onClick={onClickResetSystemPrompt}>
-                Reset character settings
-              </TextButton>
-            </div>
+        <div className="text-text1 max-w-5xl mx-auto px-4 py-8 md:px-24 md:py-16">
+          <div className="my-16 typography-32 font-bold text-center">Settings</div>
 
-            <textarea
-              value={systemPrompt}
-              onChange={onChangeSystemPrompt}
-              className="px-16 py-8  bg-surface1 hover:bg-surface1-hover h-168 rounded-8 w-full"
-            ></textarea>
+          {/* Selector de pestañas */}
+          <div className="flex justify-center flex-wrap gap-4 mb-8">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                className={`flex items-center px-4 py-2 rounded-lg font-bold transition duration-300 ${
+                  activeTab === tab.id
+                    ? 'text-white shadow-lg'
+                    : 'text-gray-700 hover:bg-gray-200'
+                }`}
+                style={{ backgroundColor: activeTab === tab.id ? 'var(--main-ui-color)' : 'transparent' }}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <div className={`w-6 h-6 mr-1 ${activeTab === tab.id ? 'text-white' : 'text-gray-700'}`} /> {/* Icono */}
+                {tab.label}
+              </button>
+            ))}
           </div>
-          <div className="my-40">
-            <div className="my-16 typography-20 font-bold">
-              Background Image
-            </div>
-            <div className="my-16">Choose a custom background image:</div>
-            <div className="my-8 flex flex-col gap-4">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="my-4"
-              />
-              {backgroundImage && (
-                <div className="flex flex-col gap-4">
-                  <div className="my-8">
-                    <img
-                      src={backgroundImage}
-                      alt="Background Preview"
-                      className="max-w-[200px] rounded-4"
-                    />
+
+          <div className="bg-white/90 p-6 md:p-10 rounded-xl shadow-2xl border-2 border-gray-100">
+            {/* Pestaña General */}
+            {activeTab === 'general' && (
+              <div className="space-y-8">
+                <h2 className="typography-24 font-bold" style={{ color: 'var(--main-ui-color)' }}>Opciones Generales</h2>
+                
+                <div className="flex gap-4">
+                  <TextButton onClick={handleSaveOptions}>Guardar Opciones</TextButton>
+                  <TextButton onClick={handleLoadOptions}>Cargar Opciones</TextButton>
+                </div>
+
+                <div className="border border-red-500 p-4 rounded-lg bg-red-50">
+                  <div className="typography-20 font-bold text-red-600 mb-2">🔴 Zona Roja</div>
+                  <div className="text-gray-700 mb-4">
+                    Al hacer clic en el botón, se borrarán **todos** los datos guardados de ChatVRM en tu navegador (claves API, historial, configuraciones, etc.) y la página se recargará.
                   </div>
-                  <div className="my-8">
-                    <TextButton onClick={handleRemoveBackground}>
-                      Remove Background
-                    </TextButton>
+                  <TextButton onClick={onDeleteAllData} className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition">
+                    Eliminar Todos los Datos
+                  </TextButton>
+                </div>
+              </div>
+            )}
+
+            {/* Pestaña API */}
+            {activeTab === 'api' && (
+              <div className="space-y-8">
+                <h2 className="typography-24 font-bold" style={{ color: 'var(--main-ui-color)' }}>Configuración de API</h2>
+                
+                {/* OpenRouter API */}
+                <div className="my-24">
+                  <div className="my-16 typography-20 font-bold">OpenRouter API</div>
+                  <input
+                    type="text"
+                    placeholder="OpenRouter API key"
+                    value={openRouterKey}
+                    onChange={onChangeOpenRouterKey}
+                    className="my-4 px-16 py-8 w-full h-40 bg-surface3 hover:bg-surface3-hover rounded-4 text-ellipsis text-gray-800"
+                  ></input>
+                  <div className="text-gray-600">
+                    Ingresa tu clave de OpenRouter API. Obtén la tuya en&nbsp;
+                    <Link
+                      url="https://openrouter.ai/"
+                      label="OpenRouter website"
+                    />.
                   </div>
                 </div>
-              )}
-              <div className="text-sm text-gray-600">
-                The background image will be saved in your browser and restored when you return.
+
+                {/* ElevenLabs API */}
+                <div className="my-24">
+                  <div className="my-16 typography-20 font-bold">ElevenLabs API</div>
+                  <input
+                    type="text"
+                    placeholder="ElevenLabs API key"
+                    value={elevenLabsKey}
+                    onChange={onChangeElevenLabsKey}
+                    className="my-4 px-16 py-8 w-full h-40 bg-surface3 hover:bg-surface3-hover rounded-4 text-ellipsis text-gray-800"
+                  ></input>
+                  <div className="text-gray-600">
+                    Ingresa tu clave de ElevenLabs API para habilitar la síntesis de voz. Obtén la tuya en&nbsp;
+                    <Link
+                      url="https://beta.elevenlabs.io/"
+                      label="ElevenLabs website"
+                    />.
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <RestreamTokens onTokensUpdate={onTokensUpdate} onChatMessage={onChatMessage} />
-          {chatLog.length > 0 && (
-            <div className="my-40">
-              <div className="my-8 grid-cols-2">
-                <div className="my-16 typography-20 font-bold">Conversation History</div>
-                <TextButton onClick={onClickResetChatLog}>
-                  Reset conversation history
-                </TextButton>
-              </div>
-              <div className="my-8">
-                {chatLog.map((value, index) => {
-                  return (
-                    <div
-                      key={index}
-                      className="my-8 grid grid-flow-col  grid-cols-[min-content_1fr] gap-x-fixed"
+            )}
+
+            {/* Pestaña Personalidad */}
+            {activeTab === 'personality' && (
+              <div className="space-y-8">
+                <h2 className="typography-24 font-bold" style={{ color: 'var(--main-ui-color)' }}>Ajustes de Personalidad</h2>
+                
+                {/* Selector de Modelo de Lenguaje */}
+                <div className="my-16">
+                    <div className="my-16 typography-20 font-bold">Modelo de Lenguaje (LLM)</div>
+                    <select
+                        className="h-40 px-8 w-full md:w-auto bg-surface3 hover:bg-surface3-hover rounded-4 text-gray-800"
+                        value={selectedModelId}
+                        onChange={(e) => onChangeSelectedModelId(e.target.value)}
                     >
-                      <div className="w-[64px] py-8">
-                        {value.role === "assistant" ? "Character" : "You"}
-                      </div>
-                      <input
-                        key={index}
-                        className="bg-surface1 hover:bg-surface1-hover rounded-8 w-full px-16 py-8"
-                        type="text"
-                        value={value.content}
-                        onChange={(event) => {
-                          onChangeChatLog(index, event.target.value);
-                        }}
-                      ></input>
+                        {OPENROUTER_MODELS.map((model) => (
+                            <option key={model.id} value={model.id}>
+                                {model.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* Character Settings (System Prompt) */}
+                <div className="my-40">
+                  <div className="my-8">
+                    <div className="my-16 typography-20 font-bold">
+                      Character Settings (System Prompt)
                     </div>
-                  );
-                })}
+                    <TextButton onClick={onClickResetSystemPrompt}>
+                      Resetear ajustes de personaje
+                    </TextButton>
+                  </div>
+
+                  <textarea
+                    value={systemPrompt}
+                    onChange={onChangeSystemPrompt}
+                    className="px-16 py-8  bg-surface1 hover:bg-surface1-hover h-168 rounded-8 w-full text-gray-800"
+                  ></textarea>
+                </div>
+
+                {/* Historial de Conversación */}
+                {chatLog.length > 0 && (
+                  <div className="my-40">
+                    <div className="my-8 flex justify-between items-center">
+                      <div className="my-16 typography-20 font-bold">Historial de Conversación</div>
+                      <TextButton onClick={onClickResetChatLog}>
+                        Resetear Historial
+                      </TextButton>
+                    </div>
+                    <div className="my-8 max-h-64 overflow-y-auto p-2 bg-gray-50 rounded-lg">
+                      {chatLog.map((value, index) => {
+                        return (
+                          <div
+                            key={index}
+                            className="my-4 grid grid-flow-col  grid-cols-[min-content_1fr] gap-x-fixed"
+                          >
+                            <div className="w-[64px] py-2 font-semibold">
+                              {value.role === "assistant" ? "Personaje" : "Tú"}
+                            </div>
+                            <input
+                              key={index}
+                              className="bg-surface1 hover:bg-surface1-hover rounded-8 w-full px-16 py-8 text-gray-800"
+                              type="text"
+                              value={value.content}
+                              onChange={(event) => {
+                                onChangeChatLog(index, event.target.value);
+                              }}
+                            ></input>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Pestaña Personalización */}
+            {activeTab === 'customization' && (
+              <div className="space-y-8">
+                <h2 className="typography-24 font-bold" style={{ color: 'var(--main-ui-color)' }}>Personalización de la Interfaz</h2>
+                
+                {/* Subir Modelo VRM */}
+                <div className="my-40">
+                  <div className="my-16 typography-20 font-bold">
+                    Modelo de Personaje (.vrm)
+                  </div>
+                  <div className="my-8">
+                    <TextButton onClick={onClickOpenVrmFile}>Abrir VRM</TextButton>
+                  </div>
+                </div>
+
+                {/* Color de la IU */}
+                <div className="my-40">
+                  <div className="my-16 typography-20 font-bold">
+                    Color Principal de la IU
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="color"
+                      value={uiColor}
+                      onChange={handleColorChange}
+                      className="w-12 h-12 rounded-full border-2 cursor-pointer"
+                      style={{ borderColor: uiColor }}
+                    />
+                    <input
+                      type="text"
+                      value={uiColor}
+                      onChange={handleColorChange}
+                      className="px-4 py-2 w-32 bg-surface3 rounded-md text-gray-800"
+                    />
+                    <div className="text-sm text-gray-600">
+                      Cambia el color de todos los botones, diálogos y bordes.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Imagen de Fondo */}
+                <div className="my-40">
+                  <div className="my-16 typography-20 font-bold">
+                    Imagen de Fondo
+                  </div>
+                  <div className="my-16">Elige una imagen de fondo personalizada:</div>
+                  <div className="my-8 flex flex-col gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="my-4"
+                    />
+                    {backgroundImage && (
+                      <div className="flex flex-col gap-4">
+                        <div className="my-8">
+                          <img
+                            src={backgroundImage}
+                            alt="Background Preview"
+                            className="max-w-[200px] rounded-4"
+                          />
+                        </div>
+                        <div className="my-8">
+                          <TextButton onClick={handleRemoveBackground}>
+                            Eliminar Fondo
+                          </TextButton>
+                        </div>
+                      </div>
+                    )}
+                    <div className="text-sm text-gray-600">
+                      La imagen de fondo se guarda localmente en tu navegador.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Pestaña Stream */}
+            {activeTab === 'stream' && (
+                <div className="space-y-8">
+                    <h2 className="typography-24 font-bold" style={{ color: 'var(--main-ui-color)' }}>Configuración de Stream</h2>
+                    <RestreamTokens onTokensUpdate={onTokensUpdate} onChatMessage={onChatMessage} />
+                </div>
+            )}
+
+            {/* Pestaña Acerca de */}
+            {activeTab === 'about' && (
+              <div className="space-y-4 text-center p-8 bg-gray-50 rounded-lg">
+                <div className="typography-28 font-extrabold" style={{ color: 'var(--main-ui-color)' }}>
+                  ChatVRM - Chatea con personajes basado en IA
+                </div>
+                <div className="typography-16 font-semibold">
+                  Fork creado por **Franniel Medina** a través de <Link url="https://github.com/zoan37/ChatVRM" label="https://github.com/zoan37/ChatVRM" />
+                </div>
+                <div className="text-lg mt-4">
+                  Inspirado por ElevenLabs, OpenRouter y VRoid de Pixiv.
+                </div>
+                <div className="pt-4 text-sm text-gray-600">
+                  ©2025 Franniel Medina - Todos los derechos reservados.
+                </div>
+                <div className="text-base font-bold">
+                  <Link url="https://beacons.ai/frannielmedinatv" label="beacons.ai/frannielmedinatv" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
