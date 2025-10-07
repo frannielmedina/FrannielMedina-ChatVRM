@@ -1,5 +1,7 @@
-import { MessageInput } from "@/components/messageInput";
-import { useState, useEffect, useCallback, MouseEvent } from "react"; // Importamos MouseEvent
+import { useState, useEffect, useCallback, MouseEvent } from "react";
+// CORRECCIÓN CLAVE: Se asume que el componente de presentación MessageInput
+// está en una carpeta/archivo con nombre 'MessageInput'
+import { MessageInput } from "@/components/MessageInput"; 
 
 type Props = {
   isChatProcessing: boolean;
@@ -42,8 +44,7 @@ export const MessageInputContainer = ({
     setIsMicRecording(false);
   }, []);
 
-  // CORRECCIÓN: Se añade el tipado del evento del mouse.
-  // Esto resuelve el error de tipado con la prop onClick del botón.
+  // CORRECCIÓN DEL HANDLER DE MOUSE: Acepta el evento del mouse
   const handleClickMicButton = useCallback((event: MouseEvent<HTMLButtonElement>) => {
     if (isMicRecording) {
       speechRecognition?.abort();
