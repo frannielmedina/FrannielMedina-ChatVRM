@@ -1,5 +1,4 @@
 import { useCallback, useContext, useEffect, useState } from "react";
-import Head from 'next/head'; // Añadido para inyectar CSS
 import VrmViewer from "@/components/vrmViewer";
 import { ViewerContext } from "@/features/vrmViewer/viewerContext";
 import {
@@ -21,9 +20,8 @@ import { ElevenLabsParam, DEFAULT_ELEVEN_LABS_PARAM } from "@/features/constants
 import { buildUrl } from "@/utils/buildUrl";
 import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
-import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog"; // ¡Asegúrate de que este archivo existe!
-import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels"; // ¡Asegúrate de que este archivo existe!
-
+import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog"; // Nuevo componente a crear
+import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels"; // Nuevo archivo a crear
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -59,7 +57,7 @@ export default function Home() {
   const [isAISpeaking, setIsAISpeaking] = useState(false);
 
   // --- Nuevos estados para las mejoras ---
-  const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
+  const [selectedModelId, setSelectedModelId] = useState(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
 
@@ -108,6 +106,8 @@ export default function Home() {
     if (savedUiColor) {
       setUiColor(savedUiColor);
     }
+    // Aplicar el color de la UI al cargar
+    document.documentElement.style.setProperty('--main-ui-color', savedUiColor || "#8e24aa");
   }, []);
 
   // Guardado de datos en localStorage
@@ -122,14 +122,10 @@ export default function Home() {
     });
   }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor]);
 
-  // Manejo de fondo
+  // Actualizar el color de la UI en CSS
   useEffect(() => {
-    if (backgroundImage) {
-      document.body.style.backgroundImage = `url(${backgroundImage})`;
-    } else {
-      document.body.style.backgroundImage = `url(${buildUrl("/bg-c.png")})`;
-    }
-  }, [backgroundImage]);
+    document.documentElement.style.setProperty('--main-ui-color', uiColor);
+  }, [uiColor]);
 
   // Función de la Zona Roja
   const handleDeleteAllData = useCallback(() => {
@@ -244,13 +240,13 @@ export default function Home() {
             const match = errorMsg.match(/code: (\d+), message: (.+)/);
             if (match) {
                 showCountdownDialog(
-                    "¡Vaya! Algo malo ha pasado con la API de OpenRouter",
-                    `La API de OpenRouter ha arrojado este error: ${match[2]}`,
+                    "¡Vaya! Algo malo ha pasado con la API de OpenRouter", 
+                    `La API de OpenRouter ha arrojado este error: ${match[2]}`, 
                     parseInt(match[1])
                 );
             } else {
                 showCountdownDialog(
-                    "¡Vaya! Algo malo ha pasado con la API de OpenRouter",
+                    "¡Vaya! Algo malo ha pasado con la API de OpenRouter", 
                     "Algo ha fallado al intentar conectar con OpenRouter."
                 );
             }
@@ -367,10 +363,6 @@ export default function Home() {
 
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
-      <Head>
-        {/* Inyecta la variable CSS para el color de la IU */}
-        <style>{`:root { --main-ui-color: ${uiColor}; }`}</style>
-      </Head>
       <Meta />
       <Introduction
         openAiKey={openAiKey}
@@ -426,3 +418,9 @@ export default function Home() {
     </div>
   );
 }
+
+// ----------------------------------------------------------------------------------------------------
+// Nota: Necesitas crear los siguientes archivos/componentes:
+// 1. src/features/constants/openRouterModels.ts (lista de modelos y DEFAULT_MODEL_ID)
+// 2. src/components/errorDialog.tsx (El modal de error con cuenta regresiva)
+// ----------------------------------------------------------------------------------------------------
