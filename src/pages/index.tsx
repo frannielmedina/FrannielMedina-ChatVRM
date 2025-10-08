@@ -12,7 +12,6 @@ import { speakCharacter } from "@/features/messages/speakCharacter";
 import { MessageInputContainer } from "@/components/messageInputContainer";
 import { SYSTEM_PROMPT } from "@/features/constants/systemPromptConstants";
 import { KoeiroParam, DEFAULT_KOEIRO_PARAM } from "@/features/constants/koeiroParam";
-// CORRECCIÓN DE RUTA DE IMPORTACIÓN: Asumimos que es minúscula si no se ha encontrado antes
 import { getChatResponseStream } from "@/features/chat/openAiChat";
 import { M_PLUS_2, Montserrat } from "next/font/google";
 import { Introduction } from "@/components/introduction";
@@ -59,12 +58,13 @@ export default function Home() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
 
-  // --- Mejoras de UI y Modelos ---
+  // --- UI y Modelos ---
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
-  const [isUiVisible, setIsUiVisible] = useState(true); // Estado de visibilidad de la IU
-  const inactivityTimerRef = useRef<number | null>(null); // Referencia al temporizador
+  
+  // ELIMINADO: const [isUiVisible, setIsUiVisible] = useState(true);
+  // ELIMINADO: const inactivityTimerRef = useRef<number | null>(null);
 
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -84,37 +84,8 @@ export default function Home() {
     });
   };
 
-  // --- Lógica de Inactividad del Cursor ---
-  useEffect(() => {
-    const INACTIVITY_TIMEOUT_MS = 60000; // 60 segundos (1 minuto)
-
-    const resetTimer = () => {
-      setIsUiVisible(true);
-      if (inactivityTimerRef.current !== null) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-      inactivityTimerRef.current = window.setTimeout(() => {
-        setIsUiVisible(false);
-      }, INACTIVITY_TIMEOUT_MS);
-    };
-
-    document.addEventListener('mousemove', resetTimer);
-    document.addEventListener('keydown', resetTimer);
-    document.addEventListener('click', resetTimer);
-
-    resetTimer();
-
-    return () => {
-      document.removeEventListener('mousemove', resetTimer);
-      document.removeEventListener('keydown', resetTimer);
-      document.removeEventListener('click', resetTimer);
-      if (inactivityTimerRef.current !== null) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-    };
-  }, []);
-  // ------------------------------------------------------------------
-
+  // ELIMINADO: Lógica de Inactividad del Cursor (useEffect)
+  
   // Carga inicial de datos desde localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -267,10 +238,8 @@ export default function Home() {
           content: `${systemPromptContent}\n\nMi mensaje es: ${newMessage}`,
         },
       ];
-
-      // Usar compatibilityMessage en lugar de MessageMiddleOut si el log no es crítico para el LLM.
-      // Si MessageMiddleOut es necesario para manejar el historial, ajusta su lógica.
-      // Aquí, usamos la versión simplificada para la primera interacción:
+      
+      // Usamos la versión simplificada para la primera interacción:
       const processedMessages = compatibilityMessage;
       // --- FIN CORRECCIÓN LLM COMPATIBILIDAD ---
 
@@ -414,6 +383,9 @@ export default function Home() {
     setOpenRouterKey(newKey);
     localStorage.setItem('openRouterKey', newKey);
   };
+  
+  // Asumimos que la visibilidad de la UI es SIEMPRE verdadera si eliminamos el gestor de inactividad
+  const isUiVisible = true; 
 
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
@@ -429,7 +401,7 @@ export default function Home() {
         onChangeElevenLabsKey={setElevenLabsKey}
       />
       
-      {/* CORRECCIÓN VISUALIZACIÓN MÓVIL: El contenedor principal se ajusta a la altura dinámica del viewport */}
+      {/* CORRECCIÓN VISUALIZACIÓN MÓVIL: Contenedor principal ajustado a 100dvh */}
       <main
         className="flex flex-col items-center justify-start min-h-screen bg-gray-100"
         style={{ height: '100dvh' }}
@@ -438,7 +410,7 @@ export default function Home() {
         <MessageInputContainer
           isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
           onChatProcessStart={handleSendChat}
-          isUiVisible={isUiVisible}
+          // ELIMINADO: isUiVisible={isUiVisible}
         />
 
         <Menu
@@ -468,10 +440,11 @@ export default function Home() {
           onDeleteAllData={handleDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={setUiColor}
-          isUiVisible={isUiVisible}
+          isUiVisible={isUiVisible} // Mantenido para el Menu, pero ahora siempre true
         />
 
-        {isUiVisible && <GitHubLink />}
+        {/* Simplificado el renderizado condicional, ahora es siempre visible */}
+        <GitHubLink /> 
 
         {errorDialog && (
           <ErrorDialog
