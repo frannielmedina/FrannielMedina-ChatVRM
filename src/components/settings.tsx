@@ -298,18 +298,17 @@ export const Settings = ({
                             checked={isReasoningEnabled}
                             onChange={handleToggleReasoning}
                             className="form-checkbox h-5 w-5"
-                            // Usar el color principal para el checkbox
+                            // CORRECCIÓN: Se usa 'as React.CSSProperties' para solucionar el error de tipo.
                             style={{ 
                                 '--tw-ring-color': 'var(--main-ui-color)',
                                 backgroundColor: isReasoningEnabled ? 'var(--main-ui-color)' : 'white',
                                 borderColor: 'var(--main-ui-color)'
-                            }}
+                            } as React.CSSProperties}
                         />
                         <span className="text-gray-800">
                             Activar razonamiento (Permitir que el modelo muestre su proceso de pensamiento).
                         </span>
                     </label>
-                    {/* CORRECCIÓN DE ERROR DE ENTIDADES EN LA LÍNEA 313 */}
                     <div className="text-sm text-gray-600 mt-2">
                         Si está desactivado, el modelo recibirá una instrucción estricta para ser de **&quot;sólo salida&quot;** y ocultar su proceso interno.
                     </div>
