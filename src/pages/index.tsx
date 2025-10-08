@@ -9,7 +9,7 @@ import { speakCharacter } from "@/features/messages/speakCharacter";
 import { ModelSelector } from "@/components/modelSelector";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
 // CORRECCIÓN DE RUTA DE IMPORTACIÓN:
-import { getChatResponseStream } from "@/features/chat/OpenAiChat";
+import { getChatResponseStream } from "@/features/chat/openAiChat";
 
 // =====================
 // Componente principal
