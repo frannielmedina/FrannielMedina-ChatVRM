@@ -15,8 +15,8 @@ export async function getChatResponseStream(
         }
 
         const OPENROUTER_API_KEY = openRouterKey;
-        const YOUR_SITE_URL = 'https://chat-vrm-window.vercel.app/';
-        const YOUR_SITE_NAME = 'ChatVRM';
+        const YOUR_SITE_URL = 'https://frannielmedina-chatvrm.vercel.app/';
+        const YOUR_SITE_NAME = 'ChatVRM by Franniel Medina';
         
         const generation = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
