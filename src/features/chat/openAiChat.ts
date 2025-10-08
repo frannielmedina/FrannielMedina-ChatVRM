@@ -7,6 +7,14 @@ export async function getChatResponseStream(
 ) {
   console.log('getChatResponseStream - Model:', modelName);
 
+  // 🔹 Normalizar mensajes (role + content)
+  const normalizedMessages = messages.map((m) => ({
+    role: m.role,
+    content: m.content,
+  }));
+
+  console.log("Messages enviados a OpenRouter:", JSON.stringify(normalizedMessages, null, 2));
+
   const stream = new ReadableStream({
     async start(controller: ReadableStreamDefaultController) {
       try {
@@ -15,8 +23,8 @@ export async function getChatResponseStream(
         }
 
         const OPENROUTER_API_KEY = openRouterKey;
-        const YOUR_SITE_URL = 'https://frannielmedina-chatvrm.vercel.app/';
-        const YOUR_SITE_NAME = 'ChatVRM by Franniel Medina';
+        const YOUR_SITE_URL = 'https://chat-vrm-window.vercel.app/';
+        const YOUR_SITE_NAME = 'ChatVRM';
         
         const generation = await fetch("https://openrouter.ai/api/v1/chat/completions", {
           method: "POST",
@@ -28,9 +36,9 @@ export async function getChatResponseStream(
           },
           body: JSON.stringify({
             model: modelName,
-            messages: messages,
+            messages: normalizedMessages, // 🔹 Siempre con role + content
             temperature: 0.7,
-            max_tokens: 1024, // antes 200 → para DeepSeek y otros modelos
+            max_tokens: 1024, // 🔹 antes 200 → ahora más seguro
             stream: true,
           })
         });
@@ -54,7 +62,7 @@ export async function getChatResponseStream(
               let chunk = new TextDecoder().decode(value);
               let lines = chunk.split('\n');
 
-              // Filtrar comentarios del SSE
+              // Filtrar comentarios y [DONE]
               const SSE_COMMENT = ": OPENROUTER PROCESSING";
               lines = lines.filter((line) => 
                 line.trim() !== "" &&
@@ -71,7 +79,7 @@ export async function getChatResponseStream(
 
               try {
                 messages.forEach((message) => {
-                  // Compatibilidad con todos los modelos (delta vs message)
+                  // 🔹 Compatibilidad con todos los modelos
                   const content = message.choices?.[0]?.delta?.content 
                                 ?? message.choices?.[0]?.message?.content;
 
