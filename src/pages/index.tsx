@@ -228,7 +228,6 @@ export default function Home() {
       
       // --- CORRECCIÓN LLM COMPATIBILIDAD ---
       // Fusionamos el prompt del sistema y el mensaje de usuario en un solo mensaje de 'user'
-      // para mejorar la compatibilidad con modelos sensibles (Deepseek, R1T2, etc.)
       const systemPromptContent = systemPrompt;
       const compatibilityMessage: Message[] = [
         {
@@ -405,7 +404,7 @@ export default function Home() {
         <MessageInputContainer
           isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
           onChatProcessStart={handleSendChat}
-          // 'isUiVisible' eliminado de aquí
+          // 'isUiVisible' eliminado
         />
 
         <Menu
@@ -422,8 +421,7 @@ export default function Home() {
           onChangeSystemPrompt={setSystemPrompt}
           onChangeChatLog={handleChangeChatLog}
           onChangeElevenLabsParam={setElevenLabsParam}
-          {/* CORRECCIÓN DE TIPADO APLICADA: 'onChangeKoeiroParam' -> 'onChangeKoeiromapParam' */}
-          onChangeKoeiromapParam={setKoeiroParam} 
+          onChangeKoeiromapParam={setKoeiroParam} // Solución de tipado
           handleClickResetChatLog={() => setChatLog([])}
           handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
           backgroundImage={backgroundImage}
