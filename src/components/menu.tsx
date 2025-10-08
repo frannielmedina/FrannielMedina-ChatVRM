@@ -1,3 +1,4 @@
+// menu.tsx
 import { IconButton } from "./iconButton";
 import { Message } from "@/features/messages/messages";
 import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
@@ -19,6 +20,10 @@ type Props = {
   assistantMessage: string;
   selectedModelId: string; // Nuevo
   uiColor: string; // Nuevo
+  // 🆕 Nuevas props para el razonamiento
+  isReasoningEnabled: boolean;
+  onChangeReasoningEnabled: (isEnabled: boolean) => void;
+  // ... (otras props)
   onChangeSystemPrompt: (systemPrompt: string) => void;
   onChangeAiKey: (key: string) => void;
   onChangeElevenLabsKey: (key: string) => void;
@@ -53,8 +58,8 @@ export const Menu = ({
   onChangeChatLog,
   onChangeElevenLabsParam,
   onChangeKoeiromapParam,
-  onChangeSelectedModelId, // Nuevo
-  onChangeUiColor, // Nuevo
+  onChangeSelectedModelId,
+  onChangeUiColor,
   handleClickResetChatLog,
   handleClickResetSystemPrompt,
   onDeleteAllData, // Nuevo
@@ -63,6 +68,9 @@ export const Menu = ({
   onChatMessage,
   onTokensUpdate,
   onChangeOpenRouterKey,
+  // 🆕 Nuevas props para el razonamiento
+  isReasoningEnabled,
+  onChangeReasoningEnabled,
 }: Props) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showChatLog, setShowChatLog] = useState(false);
@@ -207,6 +215,9 @@ export const Menu = ({
           onDeleteAllData={onDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={onChangeUiColor}
+          // 🆕 Pasar nueva prop de razonamiento
+          isReasoningEnabled={isReasoningEnabled} 
+          onChangeReasoningEnabled={onChangeReasoningEnabled}
         />
       )}
       {!showChatLog && assistantMessage && (
