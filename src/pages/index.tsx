@@ -1,426 +1,160 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+// src/pages/index.tsx
+import { useCallback, useContext, useEffect, useState, useRef } from "react";
+import Head from "next/head";
+
 import VrmViewer from "@/components/vrmViewer";
 import { ViewerContext } from "@/features/vrmViewer/viewerContext";
-import {
-  Message,
-  textsToScreenplay,
-  Screenplay,
-} from "@/features/messages/messages";
+import { Message, textsToScreenplay, Screenplay } from "@/features/messages/messages";
 import { speakCharacter } from "@/features/messages/speakCharacter";
-import { MessageInputContainer } from "@/components/messageInputContainer";
-import { SYSTEM_PROMPT } from "@/features/constants/systemPromptConstants";
-import { KoeiroParam, DEFAULT_KOEIRO_PARAM } from "@/features/constants/koeiroParam";
-import { getChatResponseStream } from "@/features/chat/openAiChat";
-import { M_PLUS_2, Montserrat } from "next/font/google";
-import { Introduction } from "@/components/introduction";
-import { Menu } from "@/components/menu";
-import { GitHubLink } from "@/components/githubLink";
-import { Meta } from "@/components/meta";
-import { ElevenLabsParam, DEFAULT_ELEVEN_LABS_PARAM } from "@/features/constants/elevenLabsParam";
-import { buildUrl } from "@/utils/buildUrl";
-import { websocketService } from '../services/websocketService';
-import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
-import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog"; // Nuevo componente a crear
-import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels"; // Nuevo archivo a crear
+import { ModelSelector } from "@/components/modelSelector";
+import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
+import { getChatResponseStream } from "@/features/openAiChat";
 
-const m_plus_2 = M_PLUS_2({
-  variable: "--font-m-plus-2",
-  display: "swap",
-  preload: false,
-});
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  display: "swap",
-  subsets: ["latin"],
-});
-
-type LLMCallbackResult = {
-  processed: boolean;
-  error?: string;
-};
-
+// =====================
+// Componente principal
+// =====================
 export default function Home() {
   const { viewer } = useContext(ViewerContext);
 
-  const [systemPrompt, setSystemPrompt] = useState(SYSTEM_PROMPT);
-  const [openAiKey, setOpenAiKey] = useState("");
-  const [elevenLabsKey, setElevenLabsKey] = useState("");
-  const [elevenLabsParam, setElevenLabsParam] = useState<ElevenLabsParam>(DEFAULT_ELEVEN_LABS_PARAM);
-  const [koeiroParam, setKoeiroParam] = useState<KoeiroParam>(DEFAULT_KOEIRO_PARAM);
-  const [chatProcessing, setChatProcessing] = useState(false);
-  const [chatLog, setChatLog] = useState<Message[]>([]);
-  const [assistantMessage, setAssistantMessage] = useState("");
-  const [backgroundImage, setBackgroundImage] = useState<string>('');
-  const [restreamTokens, setRestreamTokens] = useState<any>(null);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [isAISpeaking, setIsAISpeaking] = useState(false);
-
-  // --- Nuevos estados para las mejoras ---
+  const [userMessage, setUserMessage] = useState("");
+  const [isChatProcessing, setIsChatProcessing] = useState(false);
   const [selectedModelId, setSelectedModelId] = useState(DEFAULT_MODEL_ID);
-  const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
-  const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
+  const [apiKey, setApiKey] = useState<string>("");
 
-  const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('openRouterKey') || '';
+  const controllerRef = useRef<AbortController | null>(null);
+
+  // Cargar API key de OpenRouter desde localStorage
+  useEffect(() => {
+    const savedKey = localStorage.getItem("OPENROUTER_API_KEY");
+    if (savedKey) setApiKey(savedKey);
+  }, []);
+
+  // Guardar API key en localStorage cuando cambie
+  useEffect(() => {
+    if (apiKey) {
+      localStorage.setItem("OPENROUTER_API_KEY", apiKey);
     }
-    return '';
-  });
+  }, [apiKey]);
 
-  // Función para mostrar el diálogo de error con countdown
-  const showCountdownDialog = (title: string, message: string, code?: number, countdown = 10) => {
-    setErrorDialog({
-      title,
-      message,
-      code,
-      countdown,
-      onClose: () => setErrorDialog(null),
-    });
+  // Manejar cambio en el selector de modelos
+  const handleModelChange = (id: string) => {
+    setSelectedModelId(id);
   };
 
-  // Carga inicial de datos desde localStorage
-  useEffect(() => {
-    if (window.localStorage.getItem("chatVRMParams")) {
-      const params = JSON.parse(
-        window.localStorage.getItem("chatVRMParams") as string
-      );
-      setSystemPrompt(params.systemPrompt);
-      setElevenLabsParam(params.elevenLabsParam);
-      setChatLog(params.chatLog);
-      if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
-    }
-    if (window.localStorage.getItem("elevenLabsKey")) {
-      const key = window.localStorage.getItem("elevenLabsKey") as string;
-      setElevenLabsKey(key);
-    }
-    const savedOpenRouterKey = localStorage.getItem('openRouterKey');
-    if (savedOpenRouterKey) {
-      setOpenRouterKey(savedOpenRouterKey);
-    }
-    const savedBackground = localStorage.getItem('backgroundImage');
-    if (savedBackground) {
-      setBackgroundImage(savedBackground);
-    }
-    const savedUiColor = localStorage.getItem('uiColor');
-    if (savedUiColor) {
-      setUiColor(savedUiColor);
-    }
-    // Aplicar el color de la UI al cargar
-    document.documentElement.style.setProperty('--main-ui-color', savedUiColor || "#8e24aa");
-  }, []);
+  // Manejar envío de mensaje
+  const handleSendMessage = async () => {
+    if (!userMessage.trim() || !apiKey) return;
 
-  // Guardado de datos en localStorage
-  useEffect(() => {
-    process.nextTick(() => {
-      window.localStorage.setItem(
-        "chatVRMParams",
-        JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId })
-      );
-      window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
-      window.localStorage.setItem("uiColor", uiColor);
-    });
-  }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor]);
+    setIsChatProcessing(true);
 
-  // Actualizar el color de la UI en CSS
-  useEffect(() => {
-    document.documentElement.style.setProperty('--main-ui-color', uiColor);
-  }, [uiColor]);
+    // Crear historial de mensajes (simplificado)
+    const messages: Message[] = [
+      { role: "system", content: "Eres un asistente virtual dentro de un entorno 3D." },
+      { role: "user", content: userMessage },
+    ];
 
-  // Función de la Zona Roja
-  const handleDeleteAllData = useCallback(() => {
-    const isConfirmed = window.confirm("¿Estás seguro de que quieres eliminar TODOS los datos de ChatVRM (claves API, historial, configuraciones)? Esta acción es irreversible.");
-    if (isConfirmed) {
-      localStorage.clear();
-      window.location.reload();
+    // Buscar el modelo correcto en la lista
+    const selectedModel = OPENROUTER_MODELS.find(m => m.id === selectedModelId);
+
+    if (!selectedModel) {
+      console.error("Modelo no encontrado:", selectedModelId);
+      setIsChatProcessing(false);
+      return;
     }
-  }, []);
 
-  const handleChangeChatLog = useCallback(
-    (targetIndex: number, text: string) => {
-      const newChatLog = chatLog.map((v: Message, i) => {
-        return i === targetIndex ? { role: v.role, content: text } : v;
+    try {
+      const stream = await getChatResponseStream(messages, selectedModel.model, apiKey);
+      const reader = stream.getReader();
+
+      let fullResponse = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          fullResponse += value;
+        }
+      }
+
+      console.log("Respuesta completa:", fullResponse);
+
+      // Convertir respuesta en screenplay para VRM
+      const screenplay: Screenplay[] = textsToScreenplay([fullResponse], {
+        speakerX: 0,
+        speakerY: 0,
       });
 
-      setChatLog(newChatLog);
-    },
-    [chatLog]
-  );
-
-  /**
-   * 文ごとに音声を直接でリクエストしながら再生する
-   */
-  const handleSpeakAi = useCallback(
-    async (
-      screenplay: Screenplay,
-      elevenLabsKey: string,
-      elevenLabsParam: ElevenLabsParam,
-      onStart?: () => void,
-      onEnd?: () => void
-    ) => {
-      setIsAISpeaking(true);
-      try {
-        await speakCharacter(
-          screenplay,
-          elevenLabsKey,
-          elevenLabsParam,
-          viewer,
-          () => {
-            setIsPlayingAudio(true);
-            onStart?.();
-          },
-          () => {
-            setIsPlayingAudio(false);
-            onEnd?.();
-          }
-        );
-      } catch (error) {
-        setIsAISpeaking(false);
-        // Manejo de errores de ElevenLabs
-        const errorMessage = error instanceof Error ? error.message : "Error desconocido";
-        console.error('Error during AI speech (ElevenLabs):', errorMessage);
-
-        if (errorMessage.includes("401")) {
-          showCountdownDialog("Error de API de ElevenLabs", "La API de ElevenLabs no funciona o es incorrecta.");
-        } else {
-          showCountdownDialog(
-            "¡Vaya! Algo malo ha pasado con la API de ElevenLabs",
-            "Chequea los créditos en tu cuenta de ElevenLabs o probablemente la API de ElevenLabs está caída."
-          );
-        }
-      } finally {
-        setIsAISpeaking(false);
+      // Hacer que el personaje hable
+      if (viewer) {
+        await speakCharacter(viewer, screenplay);
       }
-    },
-    [viewer]
-  );
-
-  /**
-   * アシスタントとの会話を行う
-   */
-  const handleSendChat = useCallback(
-    async (text: string) => {
-      const newMessage = text;
-      if (newMessage == null) return;
-
-      if (!openRouterKey) {
-        showCountdownDialog("Clave de OpenRouter Requerida", "Necesitas la API de OpenRouter. Ve a la Configuración y ve a la pestaña API.");
-        return;
-      }
-
-      setChatProcessing(true);
-      const messageLog: Message[] = [
-        ...chatLog,
-        { role: "user", content: newMessage },
-      ];
-      setChatLog(messageLog);
-
-      const messageProcessor = new MessageMiddleOut();
-      const processedMessages = messageProcessor.process([
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        ...messageLog,
-      ]);
-
-      const modelName = OPENROUTER_MODELS.find(m => m.id === selectedModelId)?.model || OPENROUTER_MODELS[0].model;
-
-      const stream = await getChatResponseStream(processedMessages, modelName, openRouterKey).catch(
-        (e) => {
-          setChatProcessing(false);
-          const errorMsg = e.message || e.toString();
-          console.error("OpenRouter Error:", errorMsg);
-
-          if (errorMsg.includes("401")) {
-            showCountdownDialog("Error de API de OpenRouter", "La API de OpenRouter no funciona o es incorrecta.");
-          } else if (errorMsg.includes("429")) {
-            showCountdownDialog("Límite de Tasa Excedido", "Has excedido el límite de solicitudes de OpenRouter. Por favor, espera y vuelve a intentarlo.");
-          } else if (errorMsg.includes("OpenRouter_API_Down")) {
-            const match = errorMsg.match(/code: (\d+), message: (.+)/);
-            if (match) {
-                showCountdownDialog(
-                    "¡Vaya! Algo malo ha pasado con la API de OpenRouter", 
-                    `La API de OpenRouter ha arrojado este error: ${match[2]}`, 
-                    parseInt(match[1])
-                );
-            } else {
-                showCountdownDialog(
-                    "¡Vaya! Algo malo ha pasado con la API de OpenRouter", 
-                    "Algo ha fallado al intentar conectar con OpenRouter."
-                );
-            }
-          } else {
-            showCountdownDialog("Error Desconocido de OpenRouter", `¡Vaya! Algo malo ha pasado con la API de OpenRouter, la API de OpenRouter ha arrojado este error: ${errorMsg}`);
-          }
-          return null;
-        }
-      );
-      if (stream == null) {
-        setChatProcessing(false);
-        return;
-      }
-
-      const reader = stream.getReader();
-      let receivedMessage = "";
-      let aiTextLog = "";
-      let tag = "";
-      const sentences = new Array<string>();
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          receivedMessage += value;
-          const tagMatch = receivedMessage.match(/^\[(.*?)\]/);
-          if (tagMatch && tagMatch[0]) {
-            tag = tagMatch[0];
-            receivedMessage = receivedMessage.slice(tag.length);
-          }
-
-          const sentenceMatch = receivedMessage.match(
-            /^(.+[。．！？\n.!?]|.{10,}[、,])/
-          );
-          if (sentenceMatch && sentenceMatch[0]) {
-            const sentence = sentenceMatch[0];
-            sentences.push(sentence);
-
-            receivedMessage = receivedMessage
-              .slice(sentence.length)
-              .trimStart();
-
-            if (
-              !sentence.replace(
-                /^[\s\[\(\{「［（【『〈《〔｛«‹〘〚〛〙›»〕》〉』】）］」\}\)\]]+$/g,
-                ""
-              )
-            ) {
-              continue;
-            }
-
-            const aiText = `${tag} ${sentence}`;
-            const aiTalks = textsToScreenplay([aiText], koeiroParam);
-            aiTextLog += aiText;
-
-            const currentAssistantMessage = sentences.join(" ");
-            handleSpeakAi(aiTalks[0], elevenLabsKey, elevenLabsParam, () => {
-              setAssistantMessage(currentAssistantMessage);
-            });
-          }
-        }
-      } catch (e) {
-        setChatProcessing(false);
-        console.error(e);
-      } finally {
-        reader.releaseLock();
-      }
-
-      const messageLogAssistant: Message[] = [
-        ...messageLog,
-        { role: "assistant", content: aiTextLog },
-      ];
-
-      setChatLog(messageLogAssistant);
-      setChatProcessing(false);
-    },
-    [systemPrompt, chatLog, handleSpeakAi, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey, selectedModelId]
-  );
-
-  const handleTokensUpdate = useCallback((tokens: any) => {
-    setRestreamTokens(tokens);
-  }, []);
-
-  useEffect(() => {
-    websocketService.setLLMCallback(async (message: string): Promise<LLMCallbackResult> => {
-      try {
-        if (isAISpeaking || isPlayingAudio || chatProcessing) {
-          console.log('Skipping message processing - system busy');
-          return {
-            processed: false,
-            error: 'System is busy processing previous message'
-          };
-        }
-
-        await handleSendChat(message);
-        return {
-          processed: true
-        };
-      } catch (error) {
-        console.error('Error processing message:', error);
-        return {
-          processed: false,
-          error: error instanceof Error ? error.message : 'Unknown error occurred'
-        };
-      }
-    });
-  }, [handleSendChat, chatProcessing, isPlayingAudio, isAISpeaking]);
-
-  const handleOpenRouterKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newKey = event.target.value;
-    setOpenRouterKey(newKey);
-    localStorage.setItem('openRouterKey', newKey);
+    } catch (err) {
+      console.error("Error en la conversación:", err);
+    } finally {
+      setIsChatProcessing(false);
+      setUserMessage("");
+    }
   };
 
   return (
-    <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
-      <Meta />
-      <Introduction
-        openAiKey={openAiKey}
-        onChangeAiKey={setOpenAiKey}
-        elevenLabsKey={elevenLabsKey}
-        onChangeElevenLabsKey={setElevenLabsKey}
-      />
-      <VrmViewer />
-      <MessageInputContainer
-        isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
-        onChatProcessStart={handleSendChat}
-      />
-      <Menu
-        openAiKey={openAiKey}
-        elevenLabsKey={elevenLabsKey}
-        openRouterKey={openRouterKey}
-        systemPrompt={systemPrompt}
-        chatLog={chatLog}
-        elevenLabsParam={elevenLabsParam}
-        koeiroParam={koeiroParam}
-        assistantMessage={assistantMessage}
-        onChangeAiKey={setOpenAiKey}
-        onChangeElevenLabsKey={setElevenLabsKey}
-        onChangeSystemPrompt={setSystemPrompt}
-        onChangeChatLog={handleChangeChatLog}
-        onChangeElevenLabsParam={setElevenLabsParam}
-        onChangeKoeiromapParam={setKoeiroParam}
-        handleClickResetChatLog={() => setChatLog([])}
-        handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
-        backgroundImage={backgroundImage}
-        onChangeBackgroundImage={setBackgroundImage}
-        onTokensUpdate={handleTokensUpdate}
-        onChatMessage={handleSendChat}
-        onChangeOpenRouterKey={handleOpenRouterKeyChange}
-        // Nuevas props
-        selectedModelId={selectedModelId}
-        onChangeSelectedModelId={setSelectedModelId}
-        onDeleteAllData={handleDeleteAllData}
-        uiColor={uiColor}
-        onChangeUiColor={setUiColor}
-      />
-      <GitHubLink />
+    <>
+      <Head>
+        <title>ChatVRM - OpenRouter</title>
+      </Head>
 
-      {errorDialog && (
-        <ErrorDialog
-          title={errorDialog.title}
-          message={errorDialog.message}
-          code={errorDialog.code}
-          countdown={errorDialog.countdown}
-          onClose={errorDialog.onClose}
-        />
-      )}
-    </div>
+      <main className="flex flex-col items-center justify-center h-screen bg-gray-100">
+        {/* Selector de modelo */}
+        <div className="w-full max-w-md px-4">
+          <ModelSelector
+            models={OPENROUTER_MODELS}
+            selectedModelId={selectedModelId}
+            onChange={handleModelChange}
+          />
+        </div>
+
+        {/* Input para API Key */}
+        <div className="w-full max-w-md px-4 mb-4">
+          <label className="text-sm font-bold text-gray-800 block mb-1">
+            OpenRouter API Key
+          </label>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="Introduce tu clave de OpenRouter"
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+
+        {/* Input de usuario */}
+        <div className="w-full max-w-md px-4 mb-4">
+          <input
+            type="text"
+            placeholder="Escribe tu mensaje..."
+            value={userMessage}
+            onChange={(e) => setUserMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+            disabled={isChatProcessing}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+
+        {/* Botón de enviar */}
+        <div className="w-full max-w-md px-4">
+          <button
+            onClick={handleSendMessage}
+            disabled={isChatProcessing || !userMessage}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          >
+            {isChatProcessing ? "Procesando..." : "Enviar"}
+          </button>
+        </div>
+
+        {/* Lienzo 3D con VRM */}
+        <div className="w-full h-full mt-6">
+          <VrmViewer />
+        </div>
+      </main>
+    </>
   );
 }
-
-// ----------------------------------------------------------------------------------------------------
-// Nota: Necesitas crear los siguientes archivos/componentes:
-// 1. src/features/constants/openRouterModels.ts (lista de modelos y DEFAULT_MODEL_ID)
-// 2. src/components/errorDialog.tsx (El modal de error con cuenta regresiva)
-// ----------------------------------------------------------------------------------------------------
