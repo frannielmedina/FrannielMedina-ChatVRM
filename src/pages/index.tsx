@@ -1,6 +1,6 @@
 // src/pages/index.tsx
 import { useCallback, useContext, useEffect, useState, useRef } from "react";
-import Head from 'next/head'; 
+import Head from 'next/head';
 import VrmViewer from "@/components/vrmViewer";
 import { ViewerContext } from "@/features/vrmViewer/viewerContext";
 import {
@@ -24,7 +24,6 @@ import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
-
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -59,14 +58,13 @@ export default function Home() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
 
-  // --- Mejoras de UI y Modelos ---
+  // --- UI y Modelos ---
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
-  // LÓGICA DE VISIBILIDAD RESTAURADA
-  const [isUiVisible, setIsUiVisible] = useState(true); 
-  const inactivityTimerRef = useRef<number | null>(null); 
-  // FIN LÓGICA DE VISIBILIDAD
+  
+  // ELIMINADO: La variable local 'isUiVisible'
+  // const isUiVisible = true; 
 
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -85,87 +83,49 @@ export default function Home() {
       onClose: () => setErrorDialog(null),
     });
   };
-
-  // --- Lógica de Inactividad del Cursor ---
-  useEffect(() => {
-    const INACTIVITY_TIMEOUT_MS = 60000; // 60 segundos (1 minuto)
-
-    const resetTimer = () => {
-      setIsUiVisible(true);
-      if (inactivityTimerRef.current !== null) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-      // Establece un nuevo temporizador
-      inactivityTimerRef.current = window.setTimeout(() => {
-        setIsUiVisible(false);
-      }, INACTIVITY_TIMEOUT_MS);
-    };
-
-    // Event listeners para detectar actividad (incluye tacto en móviles)
-    document.addEventListener('mousemove', resetTimer);
-    document.addEventListener('keydown', resetTimer);
-    document.addEventListener('click', resetTimer);
-    
-    // Inicia el temporizador al montar el componente
-    resetTimer();
-
-    // Limpieza al desmontar el componente
-    return () => {
-      document.removeEventListener('mousemove', resetTimer);
-      document.removeEventListener('keydown', resetTimer);
-      document.removeEventListener('click', resetTimer);
-      if (inactivityTimerRef.current !== null) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-    };
-  }, []);
-  // ------------------------------------------------------------------
-
+  
   // Carga inicial de datos desde localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
-    if (window.localStorage.getItem("chatVRMParams")) {
+    const saved = window.localStorage.getItem("chatVRMParams");
+    if (saved) {
       try {
-        const params = JSON.parse(
-          window.localStorage.getItem("chatVRMParams") as string
-        );
-        setSystemPrompt(params.systemPrompt);
-        setElevenLabsParam(params.elevenLabsParam);
-        setChatLog(params.chatLog);
+        const params = JSON.parse(saved);
+        if (params.systemPrompt) setSystemPrompt(params.systemPrompt);
+        if (params.elevenLabsParam) setElevenLabsParam(params.elevenLabsParam);
+        if (params.chatLog) setChatLog(params.chatLog);
         if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
       } catch (e) {
-        console.error("Error al cargar chatVRMParams:", e);
+        console.warn("Failed to parse chatVRMParams from localStorage", e);
       }
     }
-    if (window.localStorage.getItem("elevenLabsKey")) {
-      const key = window.localStorage.getItem("elevenLabsKey") as string;
-      setElevenLabsKey(key);
-    }
+    const key = window.localStorage.getItem("elevenLabsKey");
+    if (key) setElevenLabsKey(key);
+
     const savedOpenRouterKey = localStorage.getItem('openRouterKey');
-    if (savedOpenRouterKey) {
-      setOpenRouterKey(savedOpenRouterKey);
-    }
+    if (savedOpenRouterKey) setOpenRouterKey(savedOpenRouterKey);
+
     const savedBackground = localStorage.getItem('backgroundImage');
-    if (savedBackground) {
-      setBackgroundImage(savedBackground);
-    }
+    if (savedBackground) setBackgroundImage(savedBackground);
+
     const savedUiColor = localStorage.getItem('uiColor');
-    if (savedUiColor) {
-      setUiColor(savedUiColor);
-    }
+    if (savedUiColor) setUiColor(savedUiColor);
   }, []);
 
   // Guardado de datos en localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     process.nextTick(() => {
-      window.localStorage.setItem(
-        "chatVRMParams",
-        JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId })
-      );
-      window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
-      window.localStorage.setItem("uiColor", uiColor);
+      try {
+        window.localStorage.setItem(
+          "chatVRMParams",
+          JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId })
+        );
+        window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
+        window.localStorage.setItem("uiColor", uiColor);
+      } catch (e) {
+        console.warn("Failed to write chatVRMParams to localStorage", e);
+      }
     });
   }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor]);
 
@@ -204,8 +164,8 @@ export default function Home() {
   const handleSpeakAi = useCallback(
     async (
       screenplay: Screenplay,
-      elevenLabsKey: string,
-      elevenLabsParam: ElevenLabsParam,
+      elevenLabsKeyParam: string,
+      elevenLabsParamParam: ElevenLabsParam,
       onStart?: () => void,
       onEnd?: () => void
     ) => {
@@ -213,8 +173,8 @@ export default function Home() {
       try {
         await speakCharacter(
           screenplay,
-          elevenLabsKey,
-          elevenLabsParam,
+          elevenLabsKeyParam,
+          elevenLabsParamParam,
           viewer,
           () => {
             setIsPlayingAudio(true);
@@ -227,7 +187,6 @@ export default function Home() {
         );
       } catch (error) {
         setIsAISpeaking(false);
-        // Manejo de errores de ElevenLabs
         const errorMessage = error instanceof Error ? error.message : "Error desconocido";
         console.error('Error during AI speech (ElevenLabs):', errorMessage);
 
@@ -248,6 +207,7 @@ export default function Home() {
 
   /**
    * アシスタントとの会話を行う
+   * Se modificó la estructura de mensajes para mayor compatibilidad (Deepseek/R1T2)
    */
   const handleSendChat = useCallback(
     async (text: string) => {
@@ -265,25 +225,27 @@ export default function Home() {
         { role: "user", content: newMessage },
       ];
       setChatLog(messageLog);
-
-      const messageProcessor = new MessageMiddleOut();
-      // Nota: El uso de MessageMiddleOut aquí difiere de la convención de un solo mensaje
-      // que usamos en las correcciones anteriores para mejor compatibilidad con modelos.
-      // Mantenemos tu versión original aquí:
-      const processedMessages = messageProcessor.process([
+      
+      // --- CORRECCIÓN LLM COMPATIBILIDAD ---
+      // Fusionamos el prompt del sistema y el mensaje de usuario en un solo mensaje de 'user'
+      const systemPromptContent = systemPrompt;
+      const compatibilityMessage: Message[] = [
         {
-          role: "system",
-          content: systemPrompt,
+          role: "user",
+          content: `${systemPromptContent}\n\nMi mensaje es: ${newMessage}`,
         },
-        ...messageLog,
-      ]);
+      ];
+      
+      // Usamos la versión simplificada para la primera interacción:
+      const processedMessages = compatibilityMessage;
+      // --- FIN CORRECCIÓN LLM COMPATIBILIDAD ---
 
       const modelName = OPENROUTER_MODELS.find(m => m.id === selectedModelId)?.model || OPENROUTER_MODELS[0].model;
 
       const stream = await getChatResponseStream(processedMessages, modelName, openRouterKey).catch(
-        (e: any) => { // Tipado explícito de 'e' a 'any' para evitar errores de referencia
+        (e: any) => {
           setChatProcessing(false);
-          const errorMsg = e.message || e.toString();
+          const errorMsg = (e && e.message) ? e.message : String(e);
           console.error("OpenRouter Error:", errorMsg);
 
           if (errorMsg.includes("401")) {
@@ -296,7 +258,7 @@ export default function Home() {
                 showCountdownDialog(
                     "¡Vaya! Algo malo ha pasado con la API de OpenRouter",
                     `La API de OpenRouter ha arrojado este error: ${match[2]}`,
-                    parseInt(match[1])
+                    parseInt(match[1], 10)
                 );
             } else {
                 showCountdownDialog(
@@ -381,7 +343,7 @@ export default function Home() {
       setChatLog(messageLogAssistant);
       setChatProcessing(false);
     },
-    [systemPrompt, chatLog, handleSpeakAi, elevenLabsKey, elevenLabsParam, openRouterKey, selectedModelId, koeiroParam]
+    [systemPrompt, chatLog, handleSpeakAi, elevenLabsKey, elevenLabsParam, openRouterKey, selectedModelId]
   );
 
   const handleTokensUpdate = useCallback((tokens: any) => {
@@ -422,9 +384,9 @@ export default function Home() {
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
       <Head>
-        {/* Inyecta la variable CSS para el color de la IU */}
         <style>{`:root { --main-ui-color: ${uiColor}; }`}</style>
       </Head>
+
       <Meta />
       <Introduction
         openAiKey={openAiKey}
@@ -433,7 +395,7 @@ export default function Home() {
         onChangeElevenLabsKey={setElevenLabsKey}
       />
       
-      {/* CORRECCIÓN: Contenedor principal para evitar recortes en móvil */}
+      {/* CORRECCIÓN VISUALIZACIÓN MÓVIL: Contenedor principal ajustado a 100dvh */}
       <main
         className="flex flex-col items-center justify-start min-h-screen bg-gray-100"
         style={{ height: '100dvh' }}
@@ -442,8 +404,9 @@ export default function Home() {
         <MessageInputContainer
           isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
           onChatProcessStart={handleSendChat}
-          isUiVisible={isUiVisible} 
+          // 'isUiVisible' eliminado
         />
+
         <Menu
           openAiKey={openAiKey}
           elevenLabsKey={elevenLabsKey}
@@ -458,10 +421,7 @@ export default function Home() {
           onChangeSystemPrompt={setSystemPrompt}
           onChangeChatLog={handleChangeChatLog}
           onChangeElevenLabsParam={setElevenLabsParam}
-          
-          {/* CORRECCIÓN DE TIPADO: Cambiado de onChangeKoeiroParam a onChangeKoeiromapParam */}
-          onChangeKoeiromapParam={setKoeiroParam} 
-          
+          onChangeKoeiromapParam={setKoeiroParam} // Solución de tipado
           handleClickResetChatLog={() => setChatLog([])}
           handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
           backgroundImage={backgroundImage}
@@ -469,16 +429,15 @@ export default function Home() {
           onTokensUpdate={handleTokensUpdate}
           onChatMessage={handleSendChat}
           onChangeOpenRouterKey={handleOpenRouterKeyChange}
-          // Nuevas props
           selectedModelId={selectedModelId}
           onChangeSelectedModelId={setSelectedModelId}
           onDeleteAllData={handleDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={setUiColor}
-          isUiVisible={isUiVisible} 
+          // ELIMINADO: 'isUiVisible'
         />
-        {/* Ocultar GitHubLink también si la IU no es visible */}
-        {isUiVisible && <GitHubLink />}
+
+        <GitHubLink /> 
 
         {errorDialog && (
           <ErrorDialog
