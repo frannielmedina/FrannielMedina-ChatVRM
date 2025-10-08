@@ -15,7 +15,7 @@ export const OPENROUTER_MODELS: OpenRouterModel[] = [
     { id: 'deepseek_chimera_r1t2', name: 'Deepseek Chimera R1T2 Free', model: 'tngtech/deepseek-r1t2-chimera:free' },
     { id: 'claude_3_5_sonnet', name: 'Claude 3.5 Sonnet', model: 'anthropic/claude-3.5-sonnet' },
     { id: 'claude_3_7_sonnet', name: 'Claude 3.7 Sonnet Beta', model: 'anthropic/claude-3.7-sonnet:beta' },
-    { id: 'grok_4_fast', name: 'Grok 4 Fast', model: 'x-ai/grok-4-fast' },
+    { id: 'grok_4_fast', name: 'Grok 4 Fast Free', model: 'x-ai/grok-4-fast:free' },
     { id: 'gpt_4', name: 'OpenAi ChatGPT GPT-4', model: 'openai/gpt-4o' },
     { id: 'gpt_5', name: 'OpenAi ChatGPT GPT-5 Beta', model: 'openai/gpt-5-turbo:beta' },
     // Puedes añadir más modelos de OpenRouter si lo deseas
