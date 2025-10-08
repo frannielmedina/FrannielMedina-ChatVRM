@@ -63,8 +63,8 @@ export default function Home() {
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
   
-  // ELIMINADO: const [isUiVisible, setIsUiVisible] = useState(true);
-  // ELIMINADO: const inactivityTimerRef = useRef<number | null>(null);
+  // Asumimos que la visibilidad de la UI es siempre verdadera al eliminar la lógica de inactividad
+  const isUiVisible = true; 
 
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -83,8 +83,6 @@ export default function Home() {
       onClose: () => setErrorDialog(null),
     });
   };
-
-  // ELIMINADO: Lógica de Inactividad del Cursor (useEffect)
   
   // Carga inicial de datos desde localStorage
   useEffect(() => {
@@ -383,9 +381,6 @@ export default function Home() {
     setOpenRouterKey(newKey);
     localStorage.setItem('openRouterKey', newKey);
   };
-  
-  // Asumimos que la visibilidad de la UI es SIEMPRE verdadera si eliminamos el gestor de inactividad
-  const isUiVisible = true; 
 
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
@@ -410,7 +405,7 @@ export default function Home() {
         <MessageInputContainer
           isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
           onChatProcessStart={handleSendChat}
-          // ELIMINADO: isUiVisible={isUiVisible}
+          // 'isUiVisible' eliminado de aquí
         />
 
         <Menu
@@ -427,7 +422,8 @@ export default function Home() {
           onChangeSystemPrompt={setSystemPrompt}
           onChangeChatLog={handleChangeChatLog}
           onChangeElevenLabsParam={setElevenLabsParam}
-          onChangeKoeiroParam={setKoeiroParam}
+          {/* CORRECCIÓN DE TIPADO APLICADA: 'onChangeKoeiroParam' -> 'onChangeKoeiromapParam' */}
+          onChangeKoeiromapParam={setKoeiroParam} 
           handleClickResetChatLog={() => setChatLog([])}
           handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
           backgroundImage={backgroundImage}
@@ -440,10 +436,9 @@ export default function Home() {
           onDeleteAllData={handleDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={setUiColor}
-          isUiVisible={isUiVisible} // Mantenido para el Menu, pero ahora siempre true
+          isUiVisible={isUiVisible} // Se mantiene como `true` fijo
         />
 
-        {/* Simplificado el renderizado condicional, ahora es siempre visible */}
         <GitHubLink /> 
 
         {errorDialog && (
