@@ -63,7 +63,15 @@ export default function Home() {
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
   
-  // ELIMINADO: Lógica de inactividad isUiVisible
+  // 🆕 Nuevo Estado para el control del razonamiento
+  const [isReasoningEnabled, setIsReasoningEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('isReasoningEnabled');
+      // Por defecto, lo desactivamos si no hay valor guardado (false = sin razonamiento)
+      return saved ? JSON.parse(saved) : false; 
+    }
+    return false;
+  });
 
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -94,6 +102,8 @@ export default function Home() {
         if (params.elevenLabsParam) setElevenLabsParam(params.elevenLabsParam);
         if (params.chatLog) setChatLog(params.chatLog);
         if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
+        // 🆕 Cargar estado de razonamiento
+        if (params.isReasoningEnabled !== undefined) setIsReasoningEnabled(params.isReasoningEnabled); 
       } catch (e) {
         console.warn("Failed to parse chatVRMParams from localStorage", e);
       }
@@ -117,16 +127,18 @@ export default function Home() {
     process.nextTick(() => {
       try {
         window.localStorage.setItem(
+          // 🆕 Guardar estado de razonamiento en params
           "chatVRMParams",
-          JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId })
+          JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId, isReasoningEnabled })
         );
         window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
         window.localStorage.setItem("uiColor", uiColor);
+        localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled)); // Guardado separado también
       } catch (e) {
         console.warn("Failed to write chatVRMParams to localStorage", e);
       }
     });
-  }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor]);
+  }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor, isReasoningEnabled]);
 
   // Manejo de fondo
   useEffect(() => {
@@ -225,13 +237,21 @@ export default function Home() {
       ];
       setChatLog(messageLog);
       
+      // 🆕 1. PREPARAR PROMPT DE SISTEMA
+      let finalSystemPrompt = systemPrompt;
+      const ANTI_REASONING_PROMPT = "INSTRUCCIÓN ESTRICTA: ERES UN ASISTENTE DE SÓLO SALIDA. NUNCA DEBES MOSTRAR O ANOTAR TU PROCESO DE PENSAMIENTO, RAZONAMIENTO, O INSTRUCCIONES INTERNAS EN LA RESPUESTA FINAL. El único output es el tag de emoción y la respuesta del personaje.";
+
+      // Si el razonamiento está DESACTIVADO, inyectar la instrucción anti-razonamiento.
+      if (!isReasoningEnabled) {
+          finalSystemPrompt = ANTI_REASONING_PROMPT + "\n\n" + finalSystemPrompt;
+      }
+      
       // --- CORRECCIÓN LLM COMPATIBILIDAD ---
-      // Fusionamos el prompt del sistema y el mensaje de usuario en un solo mensaje de 'user'
-      const systemPromptContent = systemPrompt;
+      // Fusionamos el prompt del sistema final y el mensaje de usuario en un solo mensaje de 'user'
       const compatibilityMessage: Message[] = [
         {
           role: "user",
-          content: `${systemPromptContent}\n\nMi mensaje es: ${newMessage}`,
+          content: `${finalSystemPrompt}\n\nMi mensaje es: ${newMessage}`,
         },
       ];
       
@@ -342,7 +362,7 @@ export default function Home() {
       setChatLog(messageLogAssistant);
       setChatProcessing(false);
     },
-    [systemPrompt, chatLog, handleSpeakAi, elevenLabsKey, elevenLabsParam, openRouterKey, selectedModelId]
+    [systemPrompt, chatLog, handleSpeakAi, elevenLabsKey, elevenLabsParam, openRouterKey, selectedModelId, isReasoningEnabled]
   );
 
   const handleTokensUpdate = useCallback((tokens: any) => {
@@ -432,7 +452,9 @@ export default function Home() {
           onDeleteAllData={handleDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={setUiColor}
-          // 'isUiVisible' eliminado
+          // 🆕 Nueva prop de razonamiento
+          isReasoningEnabled={isReasoningEnabled} 
+          onChangeReasoningEnabled={setIsReasoningEnabled}
         />
 
         <GitHubLink /> 
