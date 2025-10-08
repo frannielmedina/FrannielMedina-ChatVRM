@@ -17,12 +17,28 @@ export async function getChatResponseStream(
 
   const stream = new ReadableStream({
     async start(controller: ReadableStreamDefaultController) {
+      // Definir la función para liberar recursos de manera limpia
+      const cleanup = (reader: ReadableStreamDefaultReader | null) => {
+        if (reader) {
+          try {
+            reader.releaseLock();
+          } catch (_) {
+            // Ignorar errores al liberar el lock
+          }
+        }
+        controller.close();
+      };
+
+      let reader: ReadableStreamDefaultReader | null = null;
+      
       try {
         if (!openRouterKey) {
           throw new Error("API_KEY_BLANK");
         }
 
         const OPENROUTER_API_KEY = openRouterKey;
+        // Estas variables DEBEN ser pasadas o definidas globalmente/en .env para OpenRouter.
+        // Asumo que 'https://chat-vrm-window.vercel.app/' es tu URL real o un placeholder.
         const YOUR_SITE_URL = 'https://chat-vrm-window.vercel.app/';
         const YOUR_SITE_NAME = 'ChatVRM';
         
@@ -30,15 +46,16 @@ export async function getChatResponseStream(
           method: "POST",
           headers: {
             "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-            "HTTP-Referer": `${YOUR_SITE_URL}`,
-            "X-Title": `${YOUR_SITE_NAME}`,
+            // Requerido por OpenRouter
+            "HTTP-Referer": `${YOUR_SITE_URL}`, 
+            "X-Title": `${YOUR_SITE_NAME}`, 
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
             model: modelName,
             messages: normalizedMessages, // 🔹 Siempre con role + content
             temperature: 0.7,
-            max_tokens: 1024, // 🔹 antes 200 → ahora más seguro
+            max_tokens: 1024,
             stream: true,
           })
         });
@@ -48,61 +65,61 @@ export async function getChatResponseStream(
           let errorMessage = `OpenRouter_API_Down, code: ${generation.status}, message: ${errorText}`;
           if (generation.status === 401 || generation.status === 403) {
             errorMessage = "OpenRouter 401/403: Unauthorized or Invalid Key";
+          } else if (generation.status === 429) {
+            errorMessage = "OpenRouter 429: Rate Limit Exceeded";
           }
           throw new Error(errorMessage);
         }
 
         if (generation.body) {
-          const reader = generation.body.getReader();
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
+          reader = generation.body.getReader();
+          
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
 
-              let chunk = new TextDecoder().decode(value);
-              let lines = chunk.split('\n');
+            let chunk = new TextDecoder().decode(value);
+            let lines = chunk.split('\n');
 
-              // Filtrar comentarios y [DONE]
-              const SSE_COMMENT = ": OPENROUTER PROCESSING";
-              lines = lines.filter((line) => 
-                line.trim() !== "" &&
-                !line.trim().startsWith(SSE_COMMENT) &&
-                !line.trim().endsWith("data: [DONE]")
-              );
+            // 💡 Filtrar comentarios de OpenRouter y la marca de finalización
+            lines = lines.filter((line) => 
+              line.trim() !== "" &&
+              !line.trim().startsWith(": OPENROUTER PROCESSING") &&
+              !line.trim().endsWith("data: [DONE]")
+            );
 
-              const dataLines = lines.filter(line => line.startsWith("data:"));
+            const dataLines = lines.filter(line => line.startsWith("data:"));
 
-              const messages = dataLines.map(line => {
-                const jsonStr = line.substring(5);
-                return JSON.parse(jsonStr);
+            const messages = dataLines.map(line => {
+              const jsonStr = line.substring(5);
+              return JSON.parse(jsonStr);
+            });
+
+            try {
+              messages.forEach((message) => {
+                // 🔹 Compatibilidad con todos los modelos:
+                // Busca el contenido en delta (para el streaming) o en message (para el final chunk)
+                const content = message.choices?.[0]?.delta?.content 
+                              ?? message.choices?.[0]?.message?.content;
+
+                if (content) {
+                  // console.log("Stream chunk:", content); // Debug
+                  controller.enqueue(content);
+                }
               });
-
-              try {
-                messages.forEach((message) => {
-                  // 🔹 Compatibilidad con todos los modelos
-                  const content = message.choices?.[0]?.delta?.content 
-                                ?? message.choices?.[0]?.message?.content;
-
-                  if (content) {
-                    console.log("Stream chunk:", content); // 🔹 Debug
-                    controller.enqueue(content);
-                  }
-                });
-              } catch (error) {
-                console.error('Error processing messages:', messages);
-                throw new Error("Error parsing streamed response from OpenRouter");
-              }
+            } catch (error) {
+              console.error('Error processing messages:', messages, error);
+              // Podrías encolar un mensaje de error al usuario aquí si lo deseas
+              // controller.enqueue("[Error en el stream: contactar al desarrollador]");
+              throw new Error("Error parsing streamed response from OpenRouter");
             }
-          } catch (error) {
-            console.error('Error reading the stream', error);
-          } finally {
-            reader.releaseLock();
           }
         }
       } catch (error) {
+        // Capturar errores de la llamada fetch o de la lógica
         controller.error(error);
       } finally {
-        controller.close();
+        cleanup(reader);
       }
     },
   });
