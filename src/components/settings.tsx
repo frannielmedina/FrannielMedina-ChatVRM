@@ -1,3 +1,4 @@
+// settings.tsx
 import React, { useEffect, useState, cache } from "react";
 import { IconButton } from "./iconButton";
 import { TextButton } from "./textButton";
@@ -37,6 +38,10 @@ type Props = {
   koeiroParam: KoeiroParam;
   selectedModelId: string; // Nuevo
   uiColor: string; // Nuevo
+  // 🆕 Nuevas props para el razonamiento
+  isReasoningEnabled: boolean;
+  onChangeReasoningEnabled: (isEnabled: boolean) => void;
+  // ... (otras props)
   onClickClose: () => void;
   onChangeAiKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -87,6 +92,9 @@ export const Settings = ({
   onRestreamTokensUpdate = () => {},
   onTokensUpdate,
   onChatMessage,
+  // 🆕 Nuevas props para el razonamiento
+  isReasoningEnabled,
+  onChangeReasoningEnabled,
 }: Props) => {
 
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
@@ -123,6 +131,7 @@ export const Settings = ({
     localStorage.setItem('openRouterKey', openRouterKey);
     localStorage.setItem('elevenLabsKey', elevenLabsKey);
     localStorage.setItem('uiColor', uiColor);
+    localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled)); // 🆕 Guardar estado
     // 'chatVRMParams' ya se guarda automáticamente en index.tsx (systemPrompt, model, etc.)
     alert("Opciones guardadas con éxito en tu navegador.");
   };
@@ -135,12 +144,15 @@ export const Settings = ({
     const savedUiColor = localStorage.getItem('uiColor');
     if (savedUiColor) onChangeUiColor(savedUiColor);
 
+    // 🆕 Cargar estado
+    const savedReasoningEnabled = localStorage.getItem('isReasoningEnabled');
+    if (savedReasoningEnabled !== null) onChangeReasoningEnabled(JSON.parse(savedReasoningEnabled));
+
     // Recarga las opciones guardadas en 'chatVRMParams'
     if (window.localStorage.getItem("chatVRMParams")) {
         const params = JSON.parse(window.localStorage.getItem("chatVRMParams") as string);
         onChangeSystemPrompt({ target: { value: params.systemPrompt || '' } } as React.ChangeEvent<HTMLTextAreaElement>);
         onChangeSelectedModelId(params.selectedModelId || OPENROUTER_MODELS[0].id);
-        // ... otras opciones que quieres cargar ...
     }
 
     alert("Opciones cargadas desde tu navegador.");
@@ -148,6 +160,11 @@ export const Settings = ({
   
   const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onChangeUiColor(event.target.value);
+  };
+  
+  // 🆕 Manejador para el toggle
+  const handleToggleReasoning = (event: React.ChangeEvent<HTMLInputElement>) => {
+    onChangeReasoningEnabled(event.target.checked);
   };
 
   return (
@@ -271,6 +288,32 @@ export const Settings = ({
                         ))}
                     </select>
                 </div>
+                
+                {/* 🆕 Control de Razonamiento */}
+                <div className="my-16">
+                    <div className="my-16 typography-20 font-bold">Control de Razonamiento (Reasoning)</div>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={isReasoningEnabled}
+                            onChange={handleToggleReasoning}
+                            className="form-checkbox h-5 w-5"
+                            // Usar el color principal para el checkbox
+                            style={{ 
+                                '--tw-ring-color': 'var(--main-ui-color)',
+                                backgroundColor: isReasoningEnabled ? 'var(--main-ui-color)' : 'white',
+                                borderColor: 'var(--main-ui-color)'
+                            }}
+                        />
+                        <span className="text-gray-800">
+                            Activar razonamiento (Permitir que el modelo muestre su proceso de pensamiento).
+                        </span>
+                    </label>
+                    <div className="text-sm text-gray-600 mt-2">
+                        Si está desactivado, el modelo recibirá una instrucción estricta para ser de "sólo salida" y ocultar su proceso interno.
+                    </div>
+                </div>
+
 
                 {/* Character Settings (System Prompt) */}
                 <div className="my-40">
