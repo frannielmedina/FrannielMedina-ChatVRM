@@ -63,7 +63,7 @@ export default function Home() {
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
   
-  // Asumimos que la visibilidad de la UI es siempre verdadera al eliminar la lógica de inactividad
+  // La variable 'isUiVisible' ya no se usa, pero la dejamos como 'true' para propósitos de consistencia
   const isUiVisible = true; 
 
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
@@ -434,7 +434,7 @@ export default function Home() {
           onDeleteAllData={handleDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={setUiColor}
-          isUiVisible={isUiVisible} // Se mantiene como `true` fijo
+          {/* ELIMINADO: 'isUiVisible' para resolver el error de Type 'IntrinsicAttributes & Props' */}
         />
 
         <GitHubLink /> 
