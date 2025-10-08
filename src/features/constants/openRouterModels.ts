@@ -8,13 +8,13 @@ export type OpenRouterModel = {
 
 export const OPENROUTER_MODELS: OpenRouterModel[] = [
     { id: 'gemini_flash_free', name: 'Gemini 2.0 Flash Free (Preestablecido)', model: 'google/gemini-2.0-flash-exp:free' },
-    { id: 'llama_3_3_70b_free', name: 'Llama 3.3 70B Free', model: 'meta-llama/llama-3-70b-instruct:free' },
-    { id: 'gemma_3_27b_free', name: 'Gemma 3 27B Free', model: 'google/gemma-27b-it:free' },
-    { id: 'deepseek_3_1_free', name: 'DeepSeek 3.1 Free', model: 'deepseek/deepseek-llm-v2-chat:free' },
-    { id: 'deepseek_chimera', name: 'Deepseek Chimera R1T2 Free', model: 'deepseek/deepseek-coder-v2-instruct:free' },
+    { id: 'llama_3_3_70b_free', name: 'Llama 3.3 70B Free', model: 'meta-llama/llama-3.3-70b-instruct:free' },
+    { id: 'gemma_3_27b_free', name: 'Gemma 3 27B Free', model: 'google/gemma-3-27b-it:free' },
+    { id: 'deepseek_3_1_free', name: 'DeepSeek 3.1 Free', model: 'deepseek/deepseek-chat-v3.1:free' },
+    { id: 'deepseek_chimera', name: 'Deepseek Chimera R1T2 Free', model: 'tngtech/deepseek-r1t2-chimera:free' },
     { id: 'claude_3_5_sonnet', name: 'Claude 3.5 Sonnet', model: 'anthropic/claude-3.5-sonnet' },
     { id: 'claude_3_7_sonnet', name: 'Claude 3.7 Sonnet', model: 'anthropic/claude-3.7-sonnet:beta' },
-    { id: 'grok_4_fast', name: 'Grok 4 Fast Free', model: 'xai/grok-1-fast' },
+    { id: 'grok_4_fast', name: 'Grok 4 Fast', model: 'x-ai/grok-4-fast' },
     { id: 'gpt_4', name: 'OpenAi ChatGPT GPT-4', model: 'openai/gpt-4o' },
     { id: 'gpt_5', name: 'OpenAi ChatGPT GPT-5', model: 'openai/gpt-5-turbo:beta' },
     // Puedes añadir más modelos de OpenRouter si lo deseas
