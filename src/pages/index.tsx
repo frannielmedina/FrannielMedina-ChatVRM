@@ -63,8 +63,7 @@ export default function Home() {
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
   
-  // ELIMINADO: La variable local 'isUiVisible'
-  // const isUiVisible = true; 
+  // ELIMINADO: Lógica de inactividad isUiVisible
 
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -395,7 +394,7 @@ export default function Home() {
         onChangeElevenLabsKey={setElevenLabsKey}
       />
       
-      {/* CORRECCIÓN VISUALIZACIÓN MÓVIL: Contenedor principal ajustado a 100dvh */}
+      {/* Contenedor principal ajustado a 100dvh para evitar problemas de recorte en móviles */}
       <main
         className="flex flex-col items-center justify-start min-h-screen bg-gray-100"
         style={{ height: '100dvh' }}
@@ -404,7 +403,6 @@ export default function Home() {
         <MessageInputContainer
           isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
           onChatProcessStart={handleSendChat}
-          // 'isUiVisible' eliminado
         />
 
         <Menu
@@ -421,7 +419,7 @@ export default function Home() {
           onChangeSystemPrompt={setSystemPrompt}
           onChangeChatLog={handleChangeChatLog}
           onChangeElevenLabsParam={setElevenLabsParam}
-          onChangeKoeiromapParam={setKoeiroParam} // Solución de tipado
+          onChangeKoeiromapParam={setKoeiroParam} // Corrección de tipado
           handleClickResetChatLog={() => setChatLog([])}
           handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
           backgroundImage={backgroundImage}
@@ -434,7 +432,7 @@ export default function Home() {
           onDeleteAllData={handleDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={setUiColor}
-          // ELIMINADO: 'isUiVisible'
+          // 'isUiVisible' eliminado
         />
 
         <GitHubLink /> 
