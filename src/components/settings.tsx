@@ -309,8 +309,9 @@ export const Settings = ({
                             Activar razonamiento (Permitir que el modelo muestre su proceso de pensamiento).
                         </span>
                     </label>
+                    {/* CORRECCIÓN DE ERROR DE ENTIDADES EN LA LÍNEA 313 */}
                     <div className="text-sm text-gray-600 mt-2">
-                        Si está desactivado, el modelo recibirá una instrucción estricta para ser de "sólo salida" y ocultar su proceso interno.
+                        Si está desactivado, el modelo recibirá una instrucción estricta para ser de **&quot;sólo salida&quot;** y ocultar su proceso interno.
                     </div>
                 </div>
 
