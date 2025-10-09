@@ -447,7 +447,7 @@ export const Settings = ({
                 </div>
             )}
 
-            {/* Pestaña Acerca de (Modificada) */}
+            {/* Pestaña Acerca de (Modificada con logo y GitHub ajustado) */}
             {activeTab === 'about' && (
               <div className="space-y-8 text-center p-8 bg-gray-50 rounded-lg">
                 
@@ -462,7 +462,7 @@ export const Settings = ({
                   ChatVRM - Chatea con personajes basado en IA
                 </div>
                 
-                {/* Enlace a GitHub */}
+                {/* Enlace a GitHub - TAMAÑO AJUSTADO */}
                 <a
                     href="https://github.com/zoan37/ChatVRM"
                     target="_blank"
@@ -471,7 +471,7 @@ export const Settings = ({
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 mr-2"
+                        className="h-5 w-5 mr-2" 
                         fill="currentColor"
                         viewBox="0 0 16 16"
                     >
