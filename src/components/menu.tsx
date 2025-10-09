@@ -1,4 +1,4 @@
-// menu.tsx
+// src/components/menu.tsx
 import { IconButton } from "./iconButton";
 import { Message } from "@/features/messages/messages";
 import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
@@ -152,7 +152,6 @@ export const Menu = ({
 
   return (
     <>
-      {/* CORRECCIÓN: Se añade top-0 left-0 para anclar los botones a la esquina */}
       <div className="absolute z-10 m-4 md:m-8 top-0 left-0">
         <div className="grid grid-flow-col gap-[8px]">
           <IconButton
@@ -182,7 +181,6 @@ export const Menu = ({
           )}
         </div>
       </div>
-      {/* CORRECCIÓN: Se ancla ChatLog a la esquina superior izquierda con posición absoluta */}
       {showChatLog && (
         <ChatLog 
           messages={chatLog} 
