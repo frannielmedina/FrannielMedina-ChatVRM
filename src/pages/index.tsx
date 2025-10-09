@@ -270,18 +270,23 @@ export default function Home() {
           finalSystemPrompt = ANTI_REASONING_PROMPT + "\n\n" + finalSystemPrompt;
       }
       
-      const compatibilityMessage: Message[] = [
-        {
-          role: "user",
-          content: `${finalSystemPrompt}\n\nMi mensaje es: ${newMessage}`,
-        },
+      // ⭐️ CORRECCIÓN CLAVE: SE CONSTRUYE EL ARRAY CON EL HISTORIAL COMPLETO ⭐️
+      const messagesToSend: Message[] = [
+          // 1. System Prompt (siempre el primero)
+          { role: "system", content: finalSystemPrompt },
+          
+          // 2. Historial de mensajes anterior (para la memoria/contexto)
+          // Se usa chatLog que es el estado ANTERIOR a la actualización del mensaje del usuario
+          ...chatLog.filter(m => m.role !== 'system'), 
+          
+          // 3. Nuevo mensaje del usuario
+          { role: "user", content: newMessage },
       ];
       
-      const processedMessages = compatibilityMessage;
-
+      // Se utiliza messagesToSend en lugar de processedMessages o compatibilityMessage
       const modelName = OPENROUTER_MODELS.find(m => m.id === selectedModelId)?.model || OPENROUTER_MODELS[0].model;
 
-      const stream = await getChatResponseStream(processedMessages, modelName, openRouterKey).catch(
+      const stream = await getChatResponseStream(messagesToSend, modelName, openRouterKey).catch(
         (e: any) => {
           setChatProcessing(false);
           const errorMsg = (e && e.message) ? e.message : String(e);
