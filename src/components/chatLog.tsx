@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
 import { Message } from "@/features/messages/messages";
+// CORRECCIÓN 1: Agregar la propiedad className a las Props
 type Props = {
   messages: Message[];
+  className?: string; // Propiedad opcional para recibir estilos de posicionamiento
 };
-export const ChatLog = ({ messages }: Props) => {
+
+export const ChatLog = ({ messages, className }: Props) => {
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -19,8 +22,11 @@ export const ChatLog = ({ messages }: Props) => {
       block: "center",
     });
   }, [messages]);
+
+  // CORRECCIÓN 2: El contenedor principal ahora utiliza el `className` pasado
+  // Las clases originales se mantienen, pero se anulan o se ajustan por el `className` externo
   return (
-    <div className="absolute w-col-span-6 max-w-full h-[100svh] pb-64">
+    <div className={`absolute w-col-span-6 max-w-full h-[100svh] pb-64 ${className}`}>
       <div className="max-h-full px-16 pt-104 pb-64 overflow-y-auto scroll-hidden">
         {messages.map((msg, i) => {
           return (
