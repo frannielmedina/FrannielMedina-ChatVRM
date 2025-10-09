@@ -18,23 +18,21 @@ type Props = {
   elevenLabsParam: ElevenLabsParam;
   koeiroParam: KoeiroParam;
   assistantMessage: string;
-  selectedModelId: string; // Nuevo
-  uiColor: string; // Nuevo
-  // 🆕 Nuevas props para el razonamiento
+  selectedModelId: string;
+  uiColor: string; 
   isReasoningEnabled: boolean;
   onChangeReasoningEnabled: (isEnabled: boolean) => void;
-  // ... (otras props)
   onChangeSystemPrompt: (systemPrompt: string) => void;
   onChangeAiKey: (key: string) => void;
   onChangeElevenLabsKey: (key: string) => void;
   onChangeChatLog: (index: number, text: string) => void;
   onChangeElevenLabsParam: (param: ElevenLabsParam) => void;
   onChangeKoeiromapParam: (param: KoeiroParam) => void;
-  onChangeSelectedModelId: (id: string) => void; // Nuevo
-  onChangeUiColor: (color: string) => void; // Nuevo
+  onChangeSelectedModelId: (id: string) => void; 
+  onChangeUiColor: (color: string) => void; 
   handleClickResetChatLog: () => void;
   handleClickResetSystemPrompt: () => void;
-  onDeleteAllData: () => void; // Nuevo
+  onDeleteAllData: () => void;
   backgroundImage: string;
   onChangeBackgroundImage: (value: string) => void;
   onChatMessage: (message: string) => void;
@@ -50,8 +48,8 @@ export const Menu = ({
   elevenLabsParam,
   koeiroParam,
   assistantMessage,
-  selectedModelId, // Nuevo
-  uiColor, // Nuevo
+  selectedModelId,
+  uiColor,
   onChangeSystemPrompt,
   onChangeAiKey,
   onChangeElevenLabsKey,
@@ -62,13 +60,12 @@ export const Menu = ({
   onChangeUiColor,
   handleClickResetChatLog,
   handleClickResetSystemPrompt,
-  onDeleteAllData, // Nuevo
+  onDeleteAllData,
   backgroundImage,
   onChangeBackgroundImage,
   onChatMessage,
   onTokensUpdate,
   onChangeOpenRouterKey,
-  // 🆕 Nuevas props para el razonamiento
   isReasoningEnabled,
   onChangeReasoningEnabled,
 }: Props) => {
@@ -155,14 +152,15 @@ export const Menu = ({
 
   return (
     <>
-      <div className="absolute z-10 m-4 md:m-8">
+      {/* CORRECCIÓN: Se añade top-0 left-0 para anclar los botones a la esquina */}
+      <div className="absolute z-10 m-4 md:m-8 top-0 left-0">
         <div className="grid grid-flow-col gap-[8px]">
           <IconButton
             iconName="24/Menu"
             label="Settings"
             isProcessing={false}
             onClick={() => setShowSettings(true)}
-            color={uiColor} // Aplicar color
+            color={uiColor}
           ></IconButton>
           {showChatLog ? (
             <IconButton
@@ -170,7 +168,7 @@ export const Menu = ({
               label="Conversation Log"
               isProcessing={false}
               onClick={() => setShowChatLog(false)}
-              color={uiColor} // Aplicar color
+              color={uiColor}
             />
           ) : (
             <IconButton
@@ -179,12 +177,18 @@ export const Menu = ({
               isProcessing={false}
               disabled={chatLog.length <= 0}
               onClick={() => setShowChatLog(true)}
-              color={uiColor} // Aplicar color
+              color={uiColor}
             />
           )}
         </div>
       </div>
-      {showChatLog && <ChatLog messages={chatLog} />}
+      {/* CORRECCIÓN: Se ancla ChatLog a la esquina superior izquierda con posición absoluta */}
+      {showChatLog && (
+        <ChatLog 
+          messages={chatLog} 
+          className="absolute z-30 top-[88px] left-4 md:left-8 w-11/12 md:w-1/3 max-h-[80vh]" 
+        />
+      )}
       {showSettings && (
         <Settings
           openAiKey={openAiKey}
@@ -209,13 +213,11 @@ export const Menu = ({
           onTokensUpdate={onTokensUpdate}
           onChatMessage={onChatMessage}
           onChangeOpenRouterKey={onChangeOpenRouterKey}
-          // Nuevas props
           selectedModelId={selectedModelId}
           onChangeSelectedModelId={onChangeSelectedModelId}
           onDeleteAllData={onDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={onChangeUiColor}
-          // 🆕 Pasar nueva prop de razonamiento
           isReasoningEnabled={isReasoningEnabled} 
           onChangeReasoningEnabled={onChangeReasoningEnabled}
         />
