@@ -1,278 +1,163 @@
-import { useState, useCallback, useMemo } from "react";
+// src/components/introduction.tsx
+import React, { useState } from "react";
+import { TextButton } from "./textButton";
 import { Link } from "./link";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
 type Props = {
   openAiKey: string;
   elevenLabsKey: string;
-  openRouterKey: string;
-  onChangeAiKey: (openAiKey: string) => void;
-  onChangeElevenLabsKey: (elevenLabsKey: string) => void;
-  onChangeOpenRouterKey: (openRouterKey: string) => void;
-  onClose: (shouldHide: boolean) => void; // Función para cerrar y potencialmente ocultar
+  openRouterKey: string; 
+  onChangeAiKey: (key: string) => void;
+  onChangeElevenLabsKey: (key: string) => void;
+  onChangeOpenRouterKey: (key: string) => void; 
+  onClose: (shouldHide: boolean) => void; 
 };
 
-// Definición de los pasos del tutorial
-const TUTORIAL_STEPS = [
-  "welcome",
-  "technology",
-  "apis",
-  "precautions",
-  "finished",
-] as const;
-type TutorialStep = typeof TUTORIAL_STEPS[number];
-
-export const Introduction = ({ 
-  openAiKey, 
-  elevenLabsKey, 
-  openRouterKey, 
-  onChangeAiKey, 
+export const Introduction = ({
+  openAiKey,
+  elevenLabsKey,
+  openRouterKey,
+  onChangeAiKey,
   onChangeElevenLabsKey,
-  onChangeOpenRouterKey, 
-  onClose, // Usar la nueva prop
+  onChangeOpenRouterKey,
+  onClose,
 }: Props) => {
-  const [currentStep, setCurrentStep] = useState<TutorialStep>("welcome");
-  const [hideNextTime, setHideNextTime] = useState(false); // Nuevo estado para la casilla
+  const [copyToClipboard] = useCopyToClipboard();
+  const [hideOnClose, setHideOnClose] = useState(false);
 
-  // --- Handlers de Cambio de API ---
-  const handleElevenLabsKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeElevenLabsKey(event.target.value);
-    },
-    [onChangeElevenLabsKey]
-  );
-  
-  const handleOpenRouterKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeOpenRouterKey(event.target.value);
-    },
-    [onChangeOpenRouterKey]
-  );
-  
-  const handleHideNextTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setHideNextTime(event.target.checked);
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setHideOnClose(event.target.checked);
   };
 
-  // --- Lógica de Navegación y Validación ---
-
-  const isApiStepValid = useMemo(() => {
-    return elevenLabsKey.trim().length > 0 && openRouterKey.trim().length > 0;
-  }, [elevenLabsKey, openRouterKey]);
-  
-  const currentStepIndex = TUTORIAL_STEPS.indexOf(currentStep);
-  const isLastStep = currentStepIndex === TUTORIAL_STEPS.length - 1;
-
-  const handleNext = () => {
-    if (currentStep === "apis" && !isApiStepValid) return;
-
-    if (isLastStep) {
-      onClose(hideNextTime); // Usar la función onClose y pasar el estado de la casilla
-    } else {
-      const nextIndex = currentStepIndex + 1;
-      setCurrentStep(TUTORIAL_STEPS[nextIndex]);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStepIndex > 0) {
-      const prevIndex = currentStepIndex - 1;
-      setCurrentStep(TUTORIAL_STEPS[prevIndex]);
-    }
-  };
-
-  // Renderizado del contenido del paso actual
-  const renderStepContent = (step: TutorialStep) => {
-    switch (step) {
-      case "welcome":
-        return (
-          <div className="text-center">
-            <img 
-              src="/chatvrmlogo.png" 
-              alt="ChatVRM Logo" 
-              className="mx-auto w-24 h-24 md:w-32 md:h-32 object-contain"
-            />
-            <div className="my-16 font-extrabold typography-32" style={{ color: 'var(--main-ui-color)' }}>
-              ¡Bienvenidos a ChatVRM!
-            </div>
-            <div className="typography-16 text-gray-700">
-              Puedes disfrutar de conversaciones con personajes 3D utilizando solo un navegador web, con entrada de micrófono, texto y síntesis de voz. También puedes cambiar el personaje (VRM), establecer su personalidad y ajustar la voz.
-            </div>
-          </div>
-        );
-
-      case "technology":
-        return (
-          <div>
-            <div className="my-8 font-bold typography-20" style={{ color: 'var(--main-ui-color)' }}>
-              Tecnología
-            </div>
-            <div className="typography-16 text-gray-700">
-              <Link
-                url={"https://github.com/pixiv/three-vrm"}
-                label={"@pixiv/three-vrm"}
-              />&nbsp;
-              se utiliza para mostrar y manipular modelos 3D,
-              &nbsp;<Link
-                url={"https://openrouter.ai/"}
-                label={"OpenRouter"}
-              />&nbsp;
-              se utiliza para el acceso a la LLM, y 
-              &nbsp;<Link url={"https://beta.elevenlabs.io/"} label={"ElevenLabs"} />&nbsp;
-              se utiliza para la conversión de texto a voz.
-            </div>
-            <div className="my-16 typography-16 text-gray-700">
-              El código fuente de esta demo está disponible en GitHub. ¡Siéntete libre de experimentar con cambios y modificaciones!
-              <br />
-              Repositorio:
-              &nbsp;<Link
-                url={"https://github.com/zoan37/ChatVRM"}
-                label={"https://github.com/zoan37/ChatVRM"}
-              />
-            </div>
-          </div>
-        );
-
-      case "apis":
-        return (
-          <div>
-            <div className="my-8 font-bold typography-20" style={{ color: 'var(--main-ui-color)' }}>
-              Claves de API
-            </div>
-            
-            {/* OpenRouter API */}
-            <div className="my-24">
-              <div className="my-8 font-bold typography-16 text-gray-800">
-                {openRouterKey.trim().length === 0 ? "Introduzca la API de OpenRouter" : "Clave de OpenRouter API"}
-              </div>
-              <input
-                type="text"
-                placeholder="OpenRouter API key"
-                value={openRouterKey}
-                onChange={handleOpenRouterKeyChange}
-                className="my-4 px-16 py-8 w-full h-40 bg-surface3 hover:bg-surface3-hover rounded-4 text-ellipsis text-gray-800"
-              ></input>
-              <div className="typography-14 text-gray-600">
-                Necesaria para la conversación con el modelo de lenguaje (LLM). Obtén la tuya en&nbsp;
-                <Link url="https://openrouter.ai/" label="OpenRouter website" />.
-              </div>
-            </div>
-
-            {/* ElevenLabs API */}
-            <div className="my-24">
-              <div className="my-8 font-bold typography-16 text-gray-800">
-                {elevenLabsKey.trim().length === 0 ? "Introduzca la API de ElevenLabs" : "Clave de ElevenLabs API"}
-              </div>
-              <input
-                type="text"
-                placeholder="ElevenLabs API key"
-                value={elevenLabsKey}
-                onChange={handleElevenLabsKeyChange}
-                className="my-4 px-16 py-8 w-full h-40 bg-surface3 hover:bg-surface3-hover rounded-4 text-ellipsis text-gray-800"
-              ></input>
-              <div className="typography-14 text-gray-600">
-                Necesaria para la síntesis de voz del personaje. Obtén la tuya en&nbsp;
-                <Link url="https://beta.elevenlabs.io/" label="ElevenLabs website" />.
-              </div>
-            </div>
-            
-            <div className="my-16 typography-14 text-gray-700 p-2 border-l-4 border-secondary bg-secondary/10">
-              Las claves API se almacenan localmente en tu navegador para realizar las llamadas directamente; no se guardan en el servidor.
-            </div>
-          </div>
-        );
-
-      case "precautions":
-        return (
-          <div>
-            <div className="my-8 font-bold typography-20" style={{ color: 'var(--main-ui-color)' }}>
-              Precauciones de Uso
-            </div>
-            <div className="typography-16 text-gray-700 p-4 border-2 border-red-400 rounded-lg bg-red-50">
-              No induzcas intencionadamente comentarios discriminatorios, violentos o que menosprecien a una persona específica. Al reemplazar personajes con un modelo VRM, respeta los términos de uso de dicho modelo.
-            </div>
-          </div>
-        );
-
-      case "finished":
-        return (
-          <div className="text-center">
-            <img 
-              src="/chatvrmlogo.png" 
-              alt="ChatVRM Logo" 
-              className="mx-auto w-24 h-24 md:w-32 md:h-32 object-contain"
-            />
-            <div className="my-16 font-extrabold typography-32" style={{ color: 'var(--main-ui-color)' }}>
-              Configuración Finalizada
-            </div>
-            <div className="typography-16 text-gray-700">
-              ¡Todo listo! Haz clic en "Comenzar" para iniciar la conversación con tu personaje virtual.
-            </div>
-            
-            {/* Casilla de verificación */}
-            <div className="mt-8 flex items-center justify-center">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                    type="checkbox"
-                    checked={hideNextTime}
-                    onChange={handleHideNextTimeChange}
-                    className="form-checkbox h-5 w-5"
-                    style={{ 
-                        '--tw-ring-color': 'var(--main-ui-color)',
-                        backgroundColor: hideNextTime ? 'var(--main-ui-color)' : 'white',
-                        borderColor: 'var(--main-ui-color)'
-                    } as React.CSSProperties}
-                />
-                <span className="text-gray-800 font-semibold">
-                  No mostrar de nuevo al cargar la página.
-                </span>
-              </label>
-            </div>
-            
-          </div>
-        );
-      default:
-        return null;
-    }
+  const handleClickClose = () => {
+    onClose(hideOnClose);
   };
 
   return (
-    <div className="fixed z-50 w-full h-full px-4 py-8 md:px-24 md:py-16 bg-black/50 backdrop-blur-sm font-M_PLUS_2 transition-opacity duration-500 ease-in-out">
-      <div className="relative mx-auto my-auto max-w-3xl max-h-full p-4 md:p-10 overflow-auto bg-white rounded-xl shadow-2xl">
-        <div className="min-h-[300px] flex flex-col justify-between">
-          {/* Contenido del Paso */}
-          <div className="flex-grow p-4">
-            {renderStepContent(currentStep)}
+    <div className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-white p-8 md:p-12 rounded-xl shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto">
+        
+        <div className="text-center mb-8">
+            <img
+                src="/chatvrmlogo.png"
+                alt="ChatVRM Logo"
+                className="mx-auto w-24 h-24 object-contain mb-4"
+            />
+            <h1 className="text-3xl font-extrabold mb-4" style={{ color: 'var(--main-ui-color)' }}>
+                ¡Bienvenido a ChatVRM!
+            </h1>
+            <p className="text-gray-600">
+                Tu asistente de personaje con IA. Aquí te explicamos cómo empezar.
+            </p>
+        </div>
+
+        <div className="space-y-8">
+          
+          {/* Paso 1: API */}
+          <div>
+            <h2 className="typography-20 font-bold mb-3 flex items-center" style={{ color: 'var(--main-ui-color)' }}>
+                1. Clave de OpenRouter (Esencial para la IA)
+            </h2>
+            <p className="text-gray-700 mb-4">
+                ChatVRM utiliza **OpenRouter** para acceder a modelos de lenguaje (LLMs). Necesitas tu clave API:
+            </p>
+            <input
+              type="text"
+              placeholder="Pega tu clave OpenRouter API aquí..."
+              value={openRouterKey}
+              onChange={(e) => onChangeOpenRouterKey(e.target.value)}
+              className="px-4 py-2 w-full h-10 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 border focus:border-[var(--main-ui-color)] transition"
+            />
+            <div className="text-sm text-gray-600 mt-2">
+                Obtén tu clave en&nbsp;
+                <Link
+                  url="https://openrouter.ai/keys"
+                  label="OpenRouter.ai"
+                />. (¡Es gratis para empezar!)
+            </div>
           </div>
 
-          {/* Navegación */}
-          <div className="mt-8 pt-4 border-t border-gray-200 flex justify-between items-center">
-            {/* Botón Atrás */}
-            <button
-              onClick={handleBack}
-              disabled={currentStepIndex === 0}
-              className="font-bold text-gray-600 hover:text-gray-800 disabled:text-gray-300 px-8 py-4 rounded-oval transition duration-200"
-            >
-              ← Anterior
-            </button>
-
-            {/* Indicador de Paso */}
-            <div className="text-sm text-gray-500">
-              Paso {currentStepIndex + 1} de {TUTORIAL_STEPS.length}
+          {/* Paso 2: Voz */}
+          <div>
+            <h2 className="typography-20 font-bold mb-3 flex items-center" style={{ color: 'var(--main-ui-color)' }}>
+                2. Clave de ElevenLabs (Opcional, para la Voz)
+            </h2>
+            <p className="text-gray-700 mb-4">
+                Si quieres que el personaje hable, necesitas una clave de ElevenLabs para la síntesis de voz:
+            </p>
+            <input
+              type="text"
+              placeholder="Pega tu clave ElevenLabs API aquí..."
+              value={elevenLabsKey}
+              onChange={(e) => onChangeElevenLabsKey(e.target.value)}
+              className="px-4 py-2 w-full h-10 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 border focus:border-[var(--main-ui-color)] transition"
+            />
+            <div className="text-sm text-gray-600 mt-2">
+                Obtén tu clave en&nbsp;
+                <Link
+                  url="https://elevenlabs.io/"
+                  label="ElevenLabs.io"
+                />. (También tiene un plan gratuito).
+            </div>
+          </div>
+          
+          {/* Paso 3: Personalidad */}
+          <div>
+            <h2 className="typography-20 font-bold mb-3 flex items-center" style={{ color: 'var(--main-ui-color)' }}>
+                3. Personalidad del Personaje
+            </h2>
+            <p className="text-gray-700 mb-4">
+                Puedes cambiar el comportamiento, el nombre y las instrucciones del personaje en la configuración.
+            </p>
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <p className="text-sm font-semibold mb-2">Instrucción Inicial (Ejemplo):</p>
+                <code 
+                    className="block text-xs bg-gray-200 p-2 rounded cursor-pointer hover:bg-gray-300"
+                    onClick={() => {
+                        copyToClipboard('Eres Alicia, una maga bondadosa y curiosa que guía al usuario en sus aventuras. Responde siempre con un tono entusiasta y mágico.');
+                        alert('Instrucción copiada al portapapeles.');
+                    }}
+                >
+                    Escribe tu System Prompt aquí. (¡Haz clic para copiar un ejemplo!)
+                </code>
+            </div>
+            <div className="text-sm text-gray-600 mt-2">
+                **Consejo:** Ve a **Settings (Menú ☰) &gt; Pestaña Personalidad** para cambiar la voz, el modelo y el texto de la personalidad.
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-10 pt-6 border-t border-gray-200 flex flex-col items-center">
+            
+            {/* Checkbox de "No mostrar de nuevo" */}
+            <div className="flex items-center mb-6">
+                <input
+                  type="checkbox"
+                  id="hideIntro"
+                  checked={hideOnClose}
+                  onChange={handleCheckboxChange}
+                  className="h-5 w-5 rounded border-gray-300"
+                  style={{ 
+                      '--tw-ring-color': 'var(--main-ui-color)',
+                      backgroundColor: hideOnClose ? 'var(--main-ui-color)' : 'white',
+                      borderColor: 'var(--main-ui-color)'
+                  } as React.CSSProperties}
+                />
+                <label htmlFor="hideIntro" className="ml-2 text-base text-gray-700">
+                  No mostrar esta introducción de nuevo.
+                </label>
             </div>
 
-            {/* Botón Siguiente / Comenzar */}
-            <button
-              onClick={handleNext}
-              disabled={currentStep === "apis" && !isApiStepValid}
-              className={`font-bold text-white px-24 py-8 rounded-oval transition duration-300 ${
-                currentStep === "apis" && !isApiStepValid 
-                  ? "bg-gray-400 cursor-not-allowed" 
-                  : "bg-secondary hover:bg-secondary-hover active:bg-secondary-press"
-              }`}
-              style={{ backgroundColor: currentStep === "apis" && !isApiStepValid ? undefined : 'var(--main-ui-color)' }}
-            >
-              {isLastStep ? "Comenzar" : "Siguiente →"}
-            </button>
-          </div>
+            {/* Botón de Cierre */}
+            <TextButton onClick={handleClickClose}>
+                Cerrar Introducción
+            </TextButton>
+            
+            {/* Línea 207 Corregida */}
+            <p className="mt-4 text-sm text-center text-gray-500">
+                Si ya tienes tus claves, haz clic en **&quot;Cerrar Introducción&quot;** para comenzar a chatear.
+            </p>
         </div>
       </div>
     </div>
