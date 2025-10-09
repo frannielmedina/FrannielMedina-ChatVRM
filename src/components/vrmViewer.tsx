@@ -77,10 +77,10 @@ export default function VrmViewer({ onVrmLoadProgress }: Props) {
   );
   
   useEffect(() => {
-    // Esto es solo para asegurar que si el canvas no se monta la primera vez, se intente cargar.
-    // CAMBIO APLICADO AQUÍ: Usando 'viewer.vrmModel' en lugar de 'viewer.vrm'
-    // Si 'viewer.vrmModel' tampoco existe, prueba con 'viewer.model' o 'viewer.loadedVrm'
-    if (!(viewer as any).vrmModel && viewer.setuped) { 
+    // CORRECCIÓN APLICADA AQUÍ: Se utiliza (viewer as any).vrm y (viewer as any).setuped
+    // para indicar a TypeScript que confiamos en que estas propiedades existen en el objeto Viewer,
+    // a pesar de que no están definidas en su tipo explícito.
+    if (!(viewer as any).vrm && (viewer as any).setuped) { 
         loadDefaultVrm(AVATAR_SAMPLE_VRM_URL);
     }
   }, [viewer, loadDefaultVrm, AVATAR_SAMPLE_VRM_URL]);
