@@ -16,7 +16,6 @@ import { getChatResponseStream } from "@/features/chat/openAiChat";
 import { M_PLUS_2, Montserrat } from "next/font/google";
 import { Introduction } from "@/components/introduction";
 import { Menu } from "@/components/menu";
-// [ELIMINADO] import { GitHubLink } from "@/components/githubLink";
 import { Meta } from "@/components/meta";
 import { ElevenLabsParam, DEFAULT_ELEVEN_LABS_PARAM } from "@/features/constants/elevenLabsParam";
 import { buildUrl } from "@/utils/buildUrl";
@@ -435,8 +434,6 @@ export default function Home() {
           isReasoningEnabled={isReasoningEnabled} 
           onChangeReasoningEnabled={setIsReasoningEnabled}
         />
-
-        {/* [ELIMINADO] <GitHubLink /> */}
 
         {errorDialog && (
           <ErrorDialog
