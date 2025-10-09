@@ -6,6 +6,7 @@ import { Link } from "./link";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"; 
 
 type Props = {
+// ... (omito Props por brevedad)
   openAiKey: string;
   elevenLabsKey: string;
   openRouterKey: string; 
@@ -16,6 +17,7 @@ type Props = {
 };
 
 export const Introduction = ({
+// ... (omito el cuerpo de la función por brevedad)
   openAiKey,
   elevenLabsKey,
   openRouterKey,
@@ -24,7 +26,10 @@ export const Introduction = ({
   onChangeOpenRouterKey,
   onClose,
 }: Props) => {
-  const [copyToClipboard] = useCopyToClipboard();
+  // CORRECCIÓN APLICADA AQUÍ: Desestructuramos el segundo elemento, la función 'copy'.
+  // El primer elemento (el estado 'copiedText') no se utiliza en este componente,
+  // por lo que usamos '_' o lo omitimos. Aquí usamos un nombre descriptivo 'copiedValue'.
+  const [copiedValue, copy] = useCopyToClipboard(); 
   const [hideOnClose, setHideOnClose] = useState(false);
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,7 +121,8 @@ export const Introduction = ({
                 <code 
                     className="block text-xs bg-gray-200 p-2 rounded cursor-pointer hover:bg-gray-300"
                     onClick={() => {
-                        copyToClipboard('Eres Alicia, una maga bondadosa y curiosa que guía al usuario en sus aventuras. Responde siempre con un tono entusiasta y mágico.');
+                        // CORRECCIÓN APLICADA AQUÍ: Llamamos a la función 'copy' en lugar de 'copyToClipboard'
+                        copy('Eres Alicia, una maga bondadosa y curiosa que guía al usuario en sus aventuras. Responde siempre con un tono entusiasta y mágico.');
                         alert('Instrucción copiada al portapapeles.');
                     }}
                 >
@@ -155,7 +161,6 @@ export const Introduction = ({
                 Cerrar Introducción
             </TextButton>
             
-            {/* LÍNEA 207 CORREGIDA: Uso de &quot; para escapar las comillas dobles */}
             <p className="mt-4 text-sm text-center text-gray-500">
                 Si ya tienes tus claves, haz clic en **&quot;Cerrar Introducción&quot;** para comenzar a chatear.
             </p>
