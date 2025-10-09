@@ -16,7 +16,7 @@ import { getChatResponseStream } from "@/features/chat/openAiChat";
 import { M_PLUS_2, Montserrat } from "next/font/google";
 import { Introduction } from "@/components/introduction";
 import { Menu } from "@/components/menu";
-import { GitHubLink } from "@/components/githubLink";
+// [ELIMINADO] import { GitHubLink } from "@/components/githubLink";
 import { Meta } from "@/components/meta";
 import { ElevenLabsParam, DEFAULT_ELEVEN_LABS_PARAM } from "@/features/constants/elevenLabsParam";
 import { buildUrl } from "@/utils/buildUrl";
@@ -46,7 +46,7 @@ export default function Home() {
   const { viewer } = useContext(ViewerContext);
 
   const [systemPrompt, setSystemPrompt] = useState(SYSTEM_PROMPT);
-  const [openAiKey, setOpenAiKey] = useState(""); // Ya no usado directamente para chat, pero se mantiene por si acaso
+  const [openAiKey, setOpenAiKey] = useState("");
   const [elevenLabsKey, setElevenLabsKey] = useState("");
   const [elevenLabsParam, setElevenLabsParam] = useState<ElevenLabsParam>(DEFAULT_ELEVEN_LABS_PARAM);
   const [koeiroParam, setKoeiroParam] = useState<KoeiroParam>(DEFAULT_KOEIRO_PARAM);
@@ -60,10 +60,9 @@ export default function Home() {
 
   // --- UI y Modelos ---
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
-  const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
+  const [uiColor, setUiColor] = useState<string>("#8e24aa");
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
   
-  // Nuevo Estado para el control del razonamiento
   const [isReasoningEnabled, setIsReasoningEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('isReasoningEnabled');
@@ -79,7 +78,6 @@ export default function Home() {
     return '';
   });
 
-  // Función para mostrar el diálogo de error con countdown
   const showCountdownDialog = (title: string, message: string, code?: number, countdown = 10) => {
     setErrorDialog({
       title,
@@ -90,7 +88,6 @@ export default function Home() {
     });
   };
   
-  // Carga inicial de datos desde localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem("chatVRMParams");
@@ -122,7 +119,6 @@ export default function Home() {
     if (savedReasoningEnabled !== null) setIsReasoningEnabled(JSON.parse(savedReasoningEnabled));
   }, []);
 
-  // Guardado de datos en localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     process.nextTick(() => {
@@ -140,7 +136,6 @@ export default function Home() {
     });
   }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor, isReasoningEnabled]);
 
-  // Manejo de fondo
   useEffect(() => {
     if (backgroundImage) {
       document.body.style.backgroundImage = `url(${backgroundImage})`;
@@ -149,7 +144,6 @@ export default function Home() {
     }
   }, [backgroundImage]);
 
-  // Función para eliminar todos los datos
   const handleDeleteAllData = useCallback(() => {
     const isConfirmed = window.confirm("¿Estás seguro de que quieres eliminar TODOS los datos de ChatVRM (claves API, historial, configuraciones)? Esta acción es irreversible.");
     if (isConfirmed) {
@@ -169,9 +163,6 @@ export default function Home() {
     [chatLog]
   );
 
-  /**
-   * 文ごとに音声を直接でリクエストしながら再生する
-   */
   const handleSpeakAi = useCallback(
     async (
       screenplay: Screenplay,
@@ -216,10 +207,6 @@ export default function Home() {
     [viewer]
   );
 
-  /**
-   * アシスタントとの会話を行う
-   * Se modificó la estructura de mensajes para mayor compatibilidad (Deepseek/R1T2)
-   */
   const handleSendChat = useCallback(
     async (text: string) => {
       const newMessage = text;
@@ -237,17 +224,13 @@ export default function Home() {
       ];
       setChatLog(messageLog);
       
-      // 1. PREPARAR PROMPT DE SISTEMA
       let finalSystemPrompt = systemPrompt;
       const ANTI_REASONING_PROMPT = "INSTRUCCIÓN ESTRICTA: ERES UN ASISTENTE DE SÓLO SALIDA. NUNCA DEBES MOSTRAR O ANOTAR TU PROCESO DE PENSAMIENTO, RAZONAMIENTO, O INSTRUCCIONES INTERNAS EN LA RESPUESTA FINAL. El único output es el tag de emoción y la respuesta del personaje.";
 
-      // Si el razonamiento está DESACTIVADO, inyectar la instrucción anti-razonamiento.
       if (!isReasoningEnabled) {
           finalSystemPrompt = ANTI_REASONING_PROMPT + "\n\n" + finalSystemPrompt;
       }
       
-      // --- CORRECCIÓN LLM COMPATIBILIDAD ---
-      // Fusionamos el prompt del sistema final y el mensaje de usuario en un solo mensaje de 'user'
       const compatibilityMessage: Message[] = [
         {
           role: "user",
@@ -255,9 +238,7 @@ export default function Home() {
         },
       ];
       
-      // Usamos la versión simplificada para la primera interacción:
       const processedMessages = compatibilityMessage;
-      // --- FIN CORRECCIÓN LLM COMPATIBILIDAD ---
 
       const modelName = OPENROUTER_MODELS.find(m => m.id === selectedModelId)?.model || OPENROUTER_MODELS[0].model;
 
@@ -414,7 +395,6 @@ export default function Home() {
         onChangeElevenLabsKey={setElevenLabsKey}
       />
       
-      {/* Contenedor principal ajustado a 100dvh para evitar problemas de recorte en móviles */}
       <main
         className="flex flex-col items-center justify-start min-h-screen bg-gray-100"
         style={{ height: '100dvh' }}
@@ -456,7 +436,7 @@ export default function Home() {
           onChangeReasoningEnabled={setIsReasoningEnabled}
         />
 
-        <GitHubLink /> 
+        {/* [ELIMINADO] <GitHubLink /> */}
 
         {errorDialog && (
           <ErrorDialog
