@@ -76,10 +76,11 @@ export default function VrmViewer({ onVrmLoadProgress }: Props) {
     [viewer, loadDefaultVrm, AVATAR_SAMPLE_VRM_URL]
   );
   
-  // Si el componente se monta sin canvas, cargar el VRM. (Asegurando la carga inicial)
   useEffect(() => {
     // Esto es solo para asegurar que si el canvas no se monta la primera vez, se intente cargar.
-    if (!viewer.vrm && viewer.setuped) {
+    // CAMBIO APLICADO AQUÍ: Usando 'viewer.vrmModel' en lugar de 'viewer.vrm'
+    // Si 'viewer.vrmModel' tampoco existe, prueba con 'viewer.model' o 'viewer.loadedVrm'
+    if (!(viewer as any).vrmModel && viewer.setuped) { 
         loadDefaultVrm(AVATAR_SAMPLE_VRM_URL);
     }
   }, [viewer, loadDefaultVrm, AVATAR_SAMPLE_VRM_URL]);
