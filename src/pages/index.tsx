@@ -23,6 +23,7 @@ import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
+import { LoadingScreen } from "@/components/loadingScreen"; // Importar LoadingScreen
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -61,7 +62,13 @@ export default function Home() {
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa");
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
+  const [showIntroduction, setShowIntroduction] = useState(true); 
   
+  // --- Estados de Carga ---
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+
+
   const [isReasoningEnabled, setIsReasoningEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('isReasoningEnabled');
@@ -89,6 +96,18 @@ export default function Home() {
   
   useEffect(() => {
     if (typeof window === "undefined") return;
+    
+    // Cargar estado de la introducción
+    const introStatus = window.localStorage.getItem("chatVRM_hide_intro");
+    if (introStatus === "true") {
+      setShowIntroduction(false);
+    }
+    
+    // Simular carga de recursos iniciales (además del VRM)
+    const initialLoadTimer = setTimeout(() => {
+        setLoadingProgress(50); 
+    }, 500);
+
     const saved = window.localStorage.getItem("chatVRMParams");
     if (saved) {
       try {
@@ -116,7 +135,28 @@ export default function Home() {
 
     const savedReasoningEnabled = localStorage.getItem('isReasoningEnabled');
     if (savedReasoningEnabled !== null) setIsReasoningEnabled(JSON.parse(savedReasoningEnabled));
+
+    return () => clearTimeout(initialLoadTimer);
   }, []);
+
+  // Función de callback para actualizar el progreso de la carga del VRM
+  const handleVrmLoadProgress = useCallback((progress: number) => {
+    // Escala el progreso de 0-100 del VRM al 50-100 total
+    const totalProgress = 50 + (progress / 2);
+    setLoadingProgress(totalProgress);
+    if (progress === 100) {
+      setTimeout(() => setIsLoading(false), 500); // Pequeño retraso para la animación final
+    }
+  }, []);
+
+  const handleLoadingAnimationEnd = useCallback(() => {
+    // Si la introducción debe mostrarse, la mostramos después de la carga
+    const introStatus = localStorage.getItem("chatVRM_hide_intro");
+    if (introStatus !== "true") {
+        setShowIntroduction(true);
+    }
+  }, []);
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -379,6 +419,14 @@ export default function Home() {
     setOpenRouterKey(newKey);
     localStorage.setItem('openRouterKey', newKey);
   };
+  
+  const handleHideIntroduction = (shouldHide: boolean) => {
+      setShowIntroduction(false);
+      if (shouldHide) {
+          localStorage.setItem("chatVRM_hide_intro", "true");
+      }
+  };
+
 
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
@@ -387,18 +435,28 @@ export default function Home() {
       </Head>
 
       <Meta />
-      <Introduction
-        openAiKey={openAiKey}
-        onChangeAiKey={setOpenAiKey}
-        elevenLabsKey={elevenLabsKey}
-        onChangeElevenLabsKey={setElevenLabsKey}
-      />
+
+      {/* Pantalla de Carga */}
+      {isLoading && <LoadingScreen progress={loadingProgress} onAnimationEnd={handleLoadingAnimationEnd} />}
+
+      {/* Introducción (Solo se muestra si isLoading es false Y showIntroduction es true) */}
+      {!isLoading && showIntroduction && (
+        <Introduction
+          openAiKey={openAiKey}
+          elevenLabsKey={elevenLabsKey}
+          openRouterKey={openRouterKey} 
+          onChangeAiKey={setOpenAiKey}
+          onChangeElevenLabsKey={setElevenLabsKey}
+          onChangeOpenRouterKey={setOpenRouterKey} 
+          onClose={handleHideIntroduction} 
+        />
+      )}
       
       <main
         className="flex flex-col items-center justify-start min-h-screen bg-gray-100"
         style={{ height: '100dvh' }}
       >
-        <VrmViewer />
+        <VrmViewer onVrmLoadProgress={handleVrmLoadProgress} />
         <MessageInputContainer
           isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
           onChatProcessStart={handleSendChat}
