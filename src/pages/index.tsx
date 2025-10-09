@@ -46,7 +46,7 @@ export default function Home() {
   const { viewer } = useContext(ViewerContext);
 
   const [systemPrompt, setSystemPrompt] = useState(SYSTEM_PROMPT);
-  const [openAiKey, setOpenAiKey] = useState("");
+  const [openAiKey, setOpenAiKey] = useState(""); // Ya no usado directamente para chat, pero se mantiene por si acaso
   const [elevenLabsKey, setElevenLabsKey] = useState("");
   const [elevenLabsParam, setElevenLabsParam] = useState<ElevenLabsParam>(DEFAULT_ELEVEN_LABS_PARAM);
   const [koeiroParam, setKoeiroParam] = useState<KoeiroParam>(DEFAULT_KOEIRO_PARAM);
@@ -63,11 +63,10 @@ export default function Home() {
   const [uiColor, setUiColor] = useState<string>("#8e24aa"); // Color predeterminado (morado)
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
   
-  // 🆕 Nuevo Estado para el control del razonamiento
+  // Nuevo Estado para el control del razonamiento
   const [isReasoningEnabled, setIsReasoningEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('isReasoningEnabled');
-      // Por defecto, lo desactivamos si no hay valor guardado (false = sin razonamiento)
       return saved ? JSON.parse(saved) : false; 
     }
     return false;
@@ -102,7 +101,6 @@ export default function Home() {
         if (params.elevenLabsParam) setElevenLabsParam(params.elevenLabsParam);
         if (params.chatLog) setChatLog(params.chatLog);
         if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
-        // 🆕 Cargar estado de razonamiento
         if (params.isReasoningEnabled !== undefined) setIsReasoningEnabled(params.isReasoningEnabled); 
       } catch (e) {
         console.warn("Failed to parse chatVRMParams from localStorage", e);
@@ -119,6 +117,9 @@ export default function Home() {
 
     const savedUiColor = localStorage.getItem('uiColor');
     if (savedUiColor) setUiColor(savedUiColor);
+
+    const savedReasoningEnabled = localStorage.getItem('isReasoningEnabled');
+    if (savedReasoningEnabled !== null) setIsReasoningEnabled(JSON.parse(savedReasoningEnabled));
   }, []);
 
   // Guardado de datos en localStorage
@@ -127,13 +128,12 @@ export default function Home() {
     process.nextTick(() => {
       try {
         window.localStorage.setItem(
-          // 🆕 Guardar estado de razonamiento en params
           "chatVRMParams",
           JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId, isReasoningEnabled })
         );
         window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
         window.localStorage.setItem("uiColor", uiColor);
-        localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled)); // Guardado separado también
+        localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled)); 
       } catch (e) {
         console.warn("Failed to write chatVRMParams to localStorage", e);
       }
@@ -149,7 +149,7 @@ export default function Home() {
     }
   }, [backgroundImage]);
 
-  // Función de la Zona Roja
+  // Función para eliminar todos los datos
   const handleDeleteAllData = useCallback(() => {
     const isConfirmed = window.confirm("¿Estás seguro de que quieres eliminar TODOS los datos de ChatVRM (claves API, historial, configuraciones)? Esta acción es irreversible.");
     if (isConfirmed) {
@@ -237,7 +237,7 @@ export default function Home() {
       ];
       setChatLog(messageLog);
       
-      // 🆕 1. PREPARAR PROMPT DE SISTEMA
+      // 1. PREPARAR PROMPT DE SISTEMA
       let finalSystemPrompt = systemPrompt;
       const ANTI_REASONING_PROMPT = "INSTRUCCIÓN ESTRICTA: ERES UN ASISTENTE DE SÓLO SALIDA. NUNCA DEBES MOSTRAR O ANOTAR TU PROCESO DE PENSAMIENTO, RAZONAMIENTO, O INSTRUCCIONES INTERNAS EN LA RESPUESTA FINAL. El único output es el tag de emoción y la respuesta del personaje.";
 
@@ -439,7 +439,7 @@ export default function Home() {
           onChangeSystemPrompt={setSystemPrompt}
           onChangeChatLog={handleChangeChatLog}
           onChangeElevenLabsParam={setElevenLabsParam}
-          onChangeKoeiromapParam={setKoeiroParam} // Corrección de tipado
+          onChangeKoeiromapParam={setKoeiroParam} 
           handleClickResetChatLog={() => setChatLog([])}
           handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
           backgroundImage={backgroundImage}
@@ -452,7 +452,6 @@ export default function Home() {
           onDeleteAllData={handleDeleteAllData}
           uiColor={uiColor}
           onChangeUiColor={setUiColor}
-          // 🆕 Nueva prop de razonamiento
           isReasoningEnabled={isReasoningEnabled} 
           onChangeReasoningEnabled={setIsReasoningEnabled}
         />
