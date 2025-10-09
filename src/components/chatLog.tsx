@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Message } from "@/features/messages/messages";
-// CORRECCIÓN 1: Agregar la propiedad className a las Props
+
+// CORRECCIÓN CLAVE: Añadir className a las Props
 type Props = {
   messages: Message[];
-  className?: string; // Propiedad opcional para recibir estilos de posicionamiento
+  className?: string; 
 };
 
 export const ChatLog = ({ messages, className }: Props) => {
@@ -23,8 +24,8 @@ export const ChatLog = ({ messages, className }: Props) => {
     });
   }, [messages]);
 
-  // CORRECCIÓN 2: El contenedor principal ahora utiliza el `className` pasado
-  // Las clases originales se mantienen, pero se anulan o se ajustan por el `className` externo
+  // Se añade la propiedad 'className' al div contenedor para el posicionamiento
+  // La clase pasada desde menu.tsx anulará o complementará las clases aquí.
   return (
     <div className={`absolute w-col-span-6 max-w-full h-[100svh] pb-64 ${className}`}>
       <div className="max-h-full px-16 pt-104 pb-64 overflow-y-auto scroll-hidden">
