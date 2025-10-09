@@ -2,7 +2,8 @@
 import React, { useState } from "react";
 import { TextButton } from "./textButton";
 import { Link } from "./link";
-import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
+// Asumo que ya has creado este hook en src/hooks/useCopyToClipboard.ts
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard"; 
 
 type Props = {
   openAiKey: string;
@@ -154,7 +155,7 @@ export const Introduction = ({
                 Cerrar Introducción
             </TextButton>
             
-            {/* Línea 207 Corregida */}
+            {/* LÍNEA 207 CORREGIDA: Uso de &quot; para escapar las comillas dobles */}
             <p className="mt-4 text-sm text-center text-gray-500">
                 Si ya tienes tus claves, haz clic en **&quot;Cerrar Introducción&quot;** para comenzar a chatear.
             </p>
