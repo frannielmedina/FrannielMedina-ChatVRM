@@ -15,7 +15,7 @@ import { getVoices } from "@/features/elevenlabs/elevenlabs";
 import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
 import { RestreamTokens } from "./restreamTokens";
 import Cookies from 'js-cookie';
-import { OPENROUTER_MODELS } from "@/features/constants/openRouterModels"; // Nuevo
+import { OPENROUTER_MODELS } from "@/features/constants/openRouterModels";
 
 // Definición de las pestañas
 const TABS = [
@@ -27,7 +27,7 @@ const TABS = [
   { id: 'about', label: 'Acerca de', icon: '24/Info' },
 ];
 
-// Tipos de las propiedades (se añaden nuevas)
+// Tipos de las propiedades
 type Props = {
   openAiKey: string;
   elevenLabsKey: string;
@@ -36,12 +36,10 @@ type Props = {
   chatLog: Message[];
   elevenLabsParam: ElevenLabsParam;
   koeiroParam: KoeiroParam;
-  selectedModelId: string; // Nuevo
-  uiColor: string; // Nuevo
-  // 🆕 Nuevas props para el razonamiento
+  selectedModelId: string;
+  uiColor: string;
   isReasoningEnabled: boolean;
   onChangeReasoningEnabled: (isEnabled: boolean) => void;
-  // ... (otras props)
   onClickClose: () => void;
   onChangeAiKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -50,12 +48,12 @@ type Props = {
   onChangeSystemPrompt: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onChangeChatLog: (index: number, text: string) => void;
   onChangeKoeiroParam: (x: number, y: number) => void;
-  onChangeSelectedModelId: (id: string) => void; // Nuevo
-  onChangeUiColor: (color: string) => void; // Nuevo
+  onChangeSelectedModelId: (id: string) => void;
+  onChangeUiColor: (color: string) => void;
   onClickOpenVrmFile: () => void;
   onClickResetChatLog: () => void;
   onClickResetSystemPrompt: () => void;
-  onDeleteAllData: () => void; // Nuevo
+  onDeleteAllData: () => void;
   backgroundImage: string;
   onChangeBackgroundImage: (image: string) => void;
   onRestreamTokensUpdate?: (tokens: { access_token: string; refresh_token: string; } | null) => void;
@@ -92,13 +90,12 @@ export const Settings = ({
   onRestreamTokensUpdate = () => {},
   onTokensUpdate,
   onChatMessage,
-  // 🆕 Nuevas props para el razonamiento
   isReasoningEnabled,
   onChangeReasoningEnabled,
 }: Props) => {
 
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState(TABS[0].id); // Estado para la pestaña activa
+  const [activeTab, setActiveTab] = useState(TABS[0].id);
 
   useEffect(() => {
     if (elevenLabsKey) {
@@ -131,8 +128,7 @@ export const Settings = ({
     localStorage.setItem('openRouterKey', openRouterKey);
     localStorage.setItem('elevenLabsKey', elevenLabsKey);
     localStorage.setItem('uiColor', uiColor);
-    localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled)); // 🆕 Guardar estado
-    // 'chatVRMParams' ya se guarda automáticamente en index.tsx (systemPrompt, model, etc.)
+    localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled));
     alert("Opciones guardadas con éxito en tu navegador.");
   };
 
@@ -144,11 +140,9 @@ export const Settings = ({
     const savedUiColor = localStorage.getItem('uiColor');
     if (savedUiColor) onChangeUiColor(savedUiColor);
 
-    // 🆕 Cargar estado
     const savedReasoningEnabled = localStorage.getItem('isReasoningEnabled');
     if (savedReasoningEnabled !== null) onChangeReasoningEnabled(JSON.parse(savedReasoningEnabled));
 
-    // Recarga las opciones guardadas en 'chatVRMParams'
     if (window.localStorage.getItem("chatVRMParams")) {
         const params = JSON.parse(window.localStorage.getItem("chatVRMParams") as string);
         onChangeSystemPrompt({ target: { value: params.systemPrompt || '' } } as React.ChangeEvent<HTMLTextAreaElement>);
@@ -162,7 +156,6 @@ export const Settings = ({
     onChangeUiColor(event.target.value);
   };
   
-  // 🆕 Manejador para el toggle
   const handleToggleReasoning = (event: React.ChangeEvent<HTMLInputElement>) => {
     onChangeReasoningEnabled(event.target.checked);
   };
@@ -194,7 +187,7 @@ export const Settings = ({
                 style={{ backgroundColor: activeTab === tab.id ? 'var(--main-ui-color)' : 'transparent' }}
                 onClick={() => setActiveTab(tab.id)}
               >
-                <div className={`w-6 h-6 mr-1 ${activeTab === tab.id ? 'text-white' : 'text-gray-700'}`} /> {/* Icono */}
+                <div className={`w-6 h-6 mr-1 ${activeTab === tab.id ? 'text-white' : 'text-gray-700'}`} />
                 {tab.label}
               </button>
             ))}
@@ -289,7 +282,7 @@ export const Settings = ({
                     </select>
                 </div>
                 
-                {/* 🆕 Control de Razonamiento */}
+                {/* Control de Razonamiento */}
                 <div className="my-16">
                     <div className="my-16 typography-20 font-bold">Control de Razonamiento (Reasoning)</div>
                     <label className="flex items-center space-x-2 cursor-pointer">
@@ -298,7 +291,6 @@ export const Settings = ({
                             checked={isReasoningEnabled}
                             onChange={handleToggleReasoning}
                             className="form-checkbox h-5 w-5"
-                            // CORRECCIÓN: Se usa 'as React.CSSProperties' para solucionar el error de tipo.
                             style={{ 
                                 '--tw-ring-color': 'var(--main-ui-color)',
                                 backgroundColor: isReasoningEnabled ? 'var(--main-ui-color)' : 'white',
