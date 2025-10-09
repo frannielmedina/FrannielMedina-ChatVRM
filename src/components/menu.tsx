@@ -69,10 +69,35 @@ export const Menu = ({
   isReasoningEnabled,
   onChangeReasoningEnabled,
 }: Props) => {
+  // Usamos un estado intermedio para permitir que la animación de salida termine antes de desmontar el componente.
+  const [isSettingsMounted, setIsSettingsMounted] = useState(false);
+  const [isChatLogMounted, setIsChatLogMounted] = useState(false);
+  
   const [showSettings, setShowSettings] = useState(false);
   const [showChatLog, setShowChatLog] = useState(false);
+  
   const { viewer } = useContext(ViewerContext);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // --- Lógica de Montaje/Desmontaje para Animaciones ---
+  useEffect(() => {
+    if (showSettings) {
+      setIsSettingsMounted(true);
+    } else if (!showSettings && isSettingsMounted) {
+      const timer = setTimeout(() => setIsSettingsMounted(false), 330); // Duración de la transición
+      return () => clearTimeout(timer);
+    }
+  }, [showSettings, isSettingsMounted]);
+
+  useEffect(() => {
+    if (showChatLog) {
+      setIsChatLogMounted(true);
+    } else if (!showChatLog && isChatLogMounted) {
+      const timer = setTimeout(() => setIsChatLogMounted(false), 300); // Duración de la transición
+      return () => clearTimeout(timer);
+    }
+  }, [showChatLog, isChatLogMounted]);
+  // --------------------------------------------------------
 
   useEffect(() => {
     const savedBackground = localStorage.getItem('backgroundImage');
@@ -181,45 +206,63 @@ export const Menu = ({
           )}
         </div>
       </div>
-      {showChatLog && (
-        <ChatLog 
-          messages={chatLog} 
-          className="absolute z-30 top-[88px] left-4 md:left-8 w-11/12 md:w-1/3 max-h-[80vh]" 
-        />
+      
+      {/* Animación del ChatLog (Deslizamiento desde la izquierda) */}
+      {isChatLogMounted && (
+        <div 
+          className={`fixed inset-0 z-30 transition-transform duration-300 ease-out ${
+            showChatLog ? 'translate-x-0' : '-translate-x-full'
+          } pointer-events-${showChatLog ? 'auto' : 'none'}`}
+        >
+          <ChatLog 
+            messages={chatLog} 
+            // Posicionar el log dentro del contenedor animado
+            className="absolute top-[88px] left-4 md:left-8 w-11/12 md:w-1/3 max-h-[80vh] bg-white/90 backdrop-blur-sm rounded-lg shadow-xl" 
+          />
+        </div>
       )}
-      {showSettings && (
-        <Settings
-          openAiKey={openAiKey}
-          elevenLabsKey={elevenLabsKey}
-          openRouterKey={openRouterKey}
-          elevenLabsParam={elevenLabsParam}
-          chatLog={chatLog}
-          systemPrompt={systemPrompt}
-          koeiroParam={koeiroParam}
-          onClickClose={() => setShowSettings(false)}
-          onChangeAiKey={handleAiKeyChange}
-          onChangeElevenLabsKey={handleElevenLabsKeyChange}
-          onChangeElevenLabsVoice={handleElevenLabsVoiceChange}
-          onChangeSystemPrompt={handleChangeSystemPrompt}
-          onChangeChatLog={onChangeChatLog}
-          onChangeKoeiroParam={handleChangeKoeiroParam}
-          onClickOpenVrmFile={handleClickOpenVrmFile}
-          onClickResetChatLog={handleClickResetChatLog}
-          onClickResetSystemPrompt={handleClickResetSystemPrompt}
-          backgroundImage={backgroundImage}
-          onChangeBackgroundImage={handleBackgroundImageChange}
-          onTokensUpdate={onTokensUpdate}
-          onChatMessage={onChatMessage}
-          onChangeOpenRouterKey={onChangeOpenRouterKey}
-          selectedModelId={selectedModelId}
-          onChangeSelectedModelId={onChangeSelectedModelId}
-          onDeleteAllData={onDeleteAllData}
-          uiColor={uiColor}
-          onChangeUiColor={onChangeUiColor}
-          isReasoningEnabled={isReasoningEnabled} 
-          onChangeReasoningEnabled={onChangeReasoningEnabled}
-        />
+
+      {/* Animación de Settings (Fundido) */}
+      {isSettingsMounted && (
+        <div 
+          className={`fixed inset-0 z-40 transition-opacity duration-330 ease-in-out ${
+            showSettings ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <Settings
+            openAiKey={openAiKey}
+            elevenLabsKey={elevenLabsKey}
+            openRouterKey={openRouterKey}
+            elevenLabsParam={elevenLabsParam}
+            chatLog={chatLog}
+            systemPrompt={systemPrompt}
+            koeiroParam={koeiroParam}
+            onClickClose={() => setShowSettings(false)}
+            onChangeAiKey={handleAiKeyChange}
+            onChangeElevenLabsKey={handleElevenLabsKeyChange}
+            onChangeElevenLabsVoice={handleElevenLabsVoiceChange}
+            onChangeSystemPrompt={handleChangeSystemPrompt}
+            onChangeChatLog={onChangeChatLog}
+            onChangeKoeiroParam={handleChangeKoeiroParam}
+            onClickOpenVrmFile={handleClickOpenVrmFile}
+            onClickResetChatLog={handleClickResetChatLog}
+            onClickResetSystemPrompt={handleClickResetSystemPrompt}
+            backgroundImage={backgroundImage}
+            onChangeBackgroundImage={handleBackgroundImageChange}
+            onTokensUpdate={onTokensUpdate}
+            onChatMessage={onChatMessage}
+            onChangeOpenRouterKey={onChangeOpenRouterKey}
+            selectedModelId={selectedModelId}
+            onChangeSelectedModelId={onChangeSelectedModelId}
+            onDeleteAllData={onDeleteAllData}
+            uiColor={uiColor}
+            onChangeUiColor={onChangeUiColor}
+            isReasoningEnabled={isReasoningEnabled} 
+            onChangeReasoningEnabled={onChangeReasoningEnabled}
+          />
+        </div>
       )}
+      
       {!showChatLog && assistantMessage && (
         <AssistantText message={assistantMessage} />
       )}
