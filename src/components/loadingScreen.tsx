@@ -14,6 +14,7 @@ export const LoadingScreen = ({ progress, onAnimationEnd }: Props) => {
       className={`fixed inset-0 z-[100] flex flex-col items-center justify-center transition-opacity duration-700 ease-out ${
         isLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100 bg-white/90 backdrop-blur-sm'
       }`}
+      // Activa el callback cuando la animación de opacidad termine (la carga está 100% terminada)
       onTransitionEnd={(e) => {
         if (e.propertyName === 'opacity' && isLoaded) {
           onAnimationEnd();
@@ -26,7 +27,7 @@ export const LoadingScreen = ({ progress, onAnimationEnd }: Props) => {
           src="/chatvrmlogo.png"
           alt="ChatVRM Logo"
           className={`w-32 h-32 md:w-40 md:h-40 object-contain mb-8 transition-transform duration-500 ${
-            isLoaded ? 'scale-125' : 'animate-pulse'
+            isLoaded ? 'scale-125' : 'animate-pulse' // 'animate-pulse' debe estar definida en tu tailwind.config.js
           }`}
         />
         
@@ -39,7 +40,7 @@ export const LoadingScreen = ({ progress, onAnimationEnd }: Props) => {
           <div
             className="h-full transition-all duration-300 ease-out"
             style={{ 
-              width: `${progress}%`, 
+              width: `${Math.min(100, progress)}%`, 
               backgroundColor: 'var(--main-ui-color)' 
             }}
           ></div>
