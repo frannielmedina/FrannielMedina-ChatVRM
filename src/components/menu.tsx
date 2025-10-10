@@ -10,7 +10,6 @@ import { ViewerContext } from "@/features/vrmViewer/viewerContext";
 import { AssistantText } from "./assistantText";
 
 type Props = {
-// ... (Omitidas props sin cambios)
   openAiKey: string;
   elevenLabsKey: string;
   openRouterKey: string;
@@ -41,7 +40,6 @@ type Props = {
   onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 export const Menu = ({
-// ... (Omitidas props sin cambios)
   openAiKey,
   elevenLabsKey,
   openRouterKey,
@@ -76,16 +74,106 @@ export const Menu = ({
   const [isChatLogMounted, setIsChatLogMounted] = useState(false);
   
   const [showSettings, setShowSettings] = useState(false);
-  const [showChatLog, setShowChatLog] = useState(false); // Mantener este estado
+  const [showChatLog, setShowChatLog] = useState(false);
+  
+  const { viewer } = useContext(ViewerContext);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ... (Omitida lógica de montaje/desmontaje)
+  // --- Lógica de Montaje/Desmontaje para Animaciones ---
+  useEffect(() => {
+    if (showSettings) {
+      setIsSettingsMounted(true);
+    } else if (!showSettings && isSettingsMounted) {
+      const timer = setTimeout(() => setIsSettingsMounted(false), 330); // Duración de la transición
+      return () => clearTimeout(timer);
+    }
+  }, [showSettings, isSettingsMounted]);
 
-  // ⭐️ NOTA: El botón para mostrar/ocultar el log se renderizará en el menú.
-  // El botón de CERRAR se mueve DENTRO de ChatLog.tsx.
-
+  useEffect(() => {
+    if (showChatLog) {
+      setIsChatLogMounted(true);
+    } else if (!showChatLog && isChatLogMounted) {
+      const timer = setTimeout(() => setIsChatLogMounted(false), 300); // Duración de la transición
+      return () => clearTimeout(timer);
+    }
+  }, [showChatLog, isChatLogMounted]);
   // --------------------------------------------------------
 
-  // ... (Omitidos useEffects y manejadores de cambios)
+  useEffect(() => {
+    const savedBackground = localStorage.getItem('backgroundImage');
+    if (savedBackground) {
+      onChangeBackgroundImage(savedBackground);
+    }
+  }, [onChangeBackgroundImage]);
+
+  const handleChangeSystemPrompt = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChangeSystemPrompt(event.target.value);
+    },
+    [onChangeSystemPrompt]
+  );
+
+  const handleAiKeyChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChangeAiKey(event.target.value);
+    },
+    [onChangeAiKey]
+  );
+
+  const handleElevenLabsKeyChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      onChangeElevenLabsKey(event.target.value);
+    },
+    [onChangeElevenLabsKey]
+  );
+
+  const handleElevenLabsVoiceChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      onChangeElevenLabsParam({
+        voiceId: event.target.value
+      });
+    },
+    [onChangeElevenLabsParam]
+  );
+
+  const handleChangeKoeiroParam = useCallback(
+    (x: number, y: number) => {
+      onChangeKoeiromapParam({
+        speakerX: x,
+        speakerY: y,
+      });
+    },
+    [onChangeKoeiromapParam]
+  );
+
+  const handleClickOpenVrmFile = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleChangeVrmFile = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files) return;
+
+      const file = files[0];
+      if (!file) return;
+
+      const file_type = file.name.split(".").pop();
+
+      if (file_type === "vrm") {
+        const blob = new Blob([file], { type: "application/octet-stream" });
+        const url = window.URL.createObjectURL(blob);
+        viewer.loadVrm(url);
+      }
+
+      event.target.value = "";
+    },
+    [viewer]
+  );
+
+  const handleBackgroundImageChange = (image: string) => {
+    onChangeBackgroundImage(image);
+  };
 
   return (
     <>
@@ -146,7 +234,6 @@ export const Menu = ({
       )}
 
       {/* Animación de Settings (Fundido) */}
-// ... (Se mantiene el código de Settings sin cambios)
       {isSettingsMounted && (
         <div 
           className={`fixed inset-0 z-40 transition-opacity duration-330 ease-in-out ${
@@ -154,7 +241,6 @@ export const Menu = ({
           }`}
         >
           <Settings
-// ... (omito props)
             openAiKey={openAiKey}
             elevenLabsKey={elevenLabsKey}
             openRouterKey={openRouterKey}
