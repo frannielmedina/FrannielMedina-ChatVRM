@@ -208,7 +208,7 @@ export const Menu = ({
         </div>
       </div>
       
-      {/* ⭐️ Animación del ChatLog (Overlay de pantalla completa con transparencia) ⭐️ */}
+      {/* Animación del ChatLog (Overlay de pantalla completa con transparencia) */}
       {isChatLogMounted && (
         // Contenedor del Overlay de Pantalla Completa
         <div 
