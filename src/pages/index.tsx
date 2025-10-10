@@ -24,7 +24,7 @@ import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
 import { LoadingScreen } from "@/components/loadingScreen";
-import { ChatLog } from "@/components/ChatLog";
+import { ChatLog } from "@/components/chatLog";
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
