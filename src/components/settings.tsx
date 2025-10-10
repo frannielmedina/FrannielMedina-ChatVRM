@@ -286,6 +286,32 @@ export const Settings = ({
                         </select>
                     </div>
                     
+                    {/* Selector de Voz ElevenLabs */}
+                    <div className="my-16">
+                        <div className="my-16 typography-20 font-bold">Voz de ElevenLabs</div>
+                        <select
+                            className="h-40 px-8 w-full md:w-auto bg-surface3 hover:bg-surface3-hover rounded-4 text-gray-800"
+                            value={elevenLabsParam.voiceId}
+                            onChange={onChangeElevenLabsVoice}
+                            disabled={!elevenLabsKey || elevenLabsVoices.length === 0}
+                        >
+                            {elevenLabsVoices.length === 0 ? (
+                                <option value="" disabled>
+                                    {!elevenLabsKey ? 'Introduce tu API Key' : 'Cargando voces...'}
+                                </option>
+                            ) : (
+                                elevenLabsVoices.map((voice) => (
+                                    <option key={voice.voice_id} value={voice.voice_id}>
+                                        {voice.name}
+                                    </option>
+                                ))
+                            )}
+                        </select>
+                        <div className="text-sm text-gray-600 mt-2">
+                            Selecciona una voz de ElevenLabs. Asegúrate de que tu clave API sea válida.
+                        </div>
+                    </div>
+
                     {/* Control de Razonamiento */}
                     <div className="my-16">
                         <div className="my-16 typography-20 font-bold">Control de Razonamiento (Reasoning)</div>
