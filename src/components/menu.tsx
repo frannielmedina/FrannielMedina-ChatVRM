@@ -10,6 +10,7 @@ import { ViewerContext } from "@/features/vrmViewer/viewerContext";
 import { AssistantText } from "./assistantText";
 
 type Props = {
+// ... (Omitidas props sin cambios)
   openAiKey: string;
   elevenLabsKey: string;
   openRouterKey: string;
@@ -40,6 +41,7 @@ type Props = {
   onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 export const Menu = ({
+// ... (Omitidas props sin cambios)
   openAiKey,
   elevenLabsKey,
   openRouterKey,
@@ -74,106 +76,16 @@ export const Menu = ({
   const [isChatLogMounted, setIsChatLogMounted] = useState(false);
   
   const [showSettings, setShowSettings] = useState(false);
-  const [showChatLog, setShowChatLog] = useState(false);
-  
-  const { viewer } = useContext(ViewerContext);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showChatLog, setShowChatLog] = useState(false); // Mantener este estado
 
-  // --- Lógica de Montaje/Desmontaje para Animaciones ---
-  useEffect(() => {
-    if (showSettings) {
-      setIsSettingsMounted(true);
-    } else if (!showSettings && isSettingsMounted) {
-      const timer = setTimeout(() => setIsSettingsMounted(false), 330); // Duración de la transición
-      return () => clearTimeout(timer);
-    }
-  }, [showSettings, isSettingsMounted]);
+  // ... (Omitida lógica de montaje/desmontaje)
 
-  useEffect(() => {
-    if (showChatLog) {
-      setIsChatLogMounted(true);
-    } else if (!showChatLog && isChatLogMounted) {
-      const timer = setTimeout(() => setIsChatLogMounted(false), 300); // Duración de la transición
-      return () => clearTimeout(timer);
-    }
-  }, [showChatLog, isChatLogMounted]);
+  // ⭐️ NOTA: El botón para mostrar/ocultar el log se renderizará en el menú.
+  // El botón de CERRAR se mueve DENTRO de ChatLog.tsx.
+
   // --------------------------------------------------------
 
-  useEffect(() => {
-    const savedBackground = localStorage.getItem('backgroundImage');
-    if (savedBackground) {
-      onChangeBackgroundImage(savedBackground);
-    }
-  }, [onChangeBackgroundImage]);
-
-  const handleChangeSystemPrompt = useCallback(
-    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onChangeSystemPrompt(event.target.value);
-    },
-    [onChangeSystemPrompt]
-  );
-
-  const handleAiKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeAiKey(event.target.value);
-    },
-    [onChangeAiKey]
-  );
-
-  const handleElevenLabsKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeElevenLabsKey(event.target.value);
-    },
-    [onChangeElevenLabsKey]
-  );
-
-  const handleElevenLabsVoiceChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
-      onChangeElevenLabsParam({
-        voiceId: event.target.value
-      });
-    },
-    [onChangeElevenLabsParam]
-  );
-
-  const handleChangeKoeiroParam = useCallback(
-    (x: number, y: number) => {
-      onChangeKoeiromapParam({
-        speakerX: x,
-        speakerY: y,
-      });
-    },
-    [onChangeKoeiromapParam]
-  );
-
-  const handleClickOpenVrmFile = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleChangeVrmFile = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (!files) return;
-
-      const file = files[0];
-      if (!file) return;
-
-      const file_type = file.name.split(".").pop();
-
-      if (file_type === "vrm") {
-        const blob = new Blob([file], { type: "application/octet-stream" });
-        const url = window.URL.createObjectURL(blob);
-        viewer.loadVrm(url);
-      }
-
-      event.target.value = "";
-    },
-    [viewer]
-  );
-
-  const handleBackgroundImageChange = (image: string) => {
-    onChangeBackgroundImage(image);
-  };
+  // ... (Omitidos useEffects y manejadores de cambios)
 
   return (
     <>
@@ -186,6 +98,7 @@ export const Menu = ({
             onClick={() => setShowSettings(true)}
             color={uiColor}
           ></IconButton>
+          {/* Se mantiene la lógica del botón para alternar showChatLog */}
           {showChatLog ? (
             <IconButton
               iconName="24/CommentOutline"
@@ -207,22 +120,33 @@ export const Menu = ({
         </div>
       </div>
       
-      {/* Animación del ChatLog (Deslizamiento desde la izquierda) */}
+      {/* ⭐️ Animación del ChatLog (Overlay de pantalla completa con transparencia) ⭐️ */}
       {isChatLogMounted && (
+        // Contenedor del Overlay de Pantalla Completa
         <div 
-          className={`fixed inset-0 z-30 transition-transform duration-300 ease-out ${
-            showChatLog ? 'translate-x-0' : '-translate-x-full'
-          } pointer-events-${showChatLog ? 'auto' : 'none'}`}
+          className={`fixed inset-0 z-30 transition-opacity duration-300 ease-in-out ${
+            showChatLog ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          // Fondo del Overlay semi-transparente
+          style={{ backgroundColor: showChatLog ? 'rgba(0, 0, 0, 0.6)' : 'transparent' }}
+          onClick={() => setShowChatLog(false)} // Permite cerrar al hacer clic en el fondo
         >
-          <ChatLog 
-            messages={chatLog} 
-            // Posicionar el log dentro del contenedor animado
-            className="absolute top-[88px] left-4 md:left-8 w-11/12 md:w-1/3 max-h-[80vh] bg-white/90 backdrop-blur-sm rounded-lg shadow-xl" 
-          />
+          {/* Contenedor central del ChatLog */}
+          <div 
+            className="absolute top-[50%] left-[50%] transform -translate-x-1/2 -translate-y-1/2 w-11/12 md:w-1/3 max-w-lg h-[80vh] rounded-lg shadow-xl"
+            style={{ backgroundColor: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(5px)' }} // Fondo blanco semi-transparente y desenfoque
+            onClick={(e) => e.stopPropagation()} // Evita que el clic dentro cierre el log
+          >
+            <ChatLog 
+              messages={chatLog} 
+              onClose={() => setShowChatLog(false)} // Usa la función de cierre que está en ChatLog.tsx
+            />
+          </div>
         </div>
       )}
 
       {/* Animación de Settings (Fundido) */}
+// ... (Se mantiene el código de Settings sin cambios)
       {isSettingsMounted && (
         <div 
           className={`fixed inset-0 z-40 transition-opacity duration-330 ease-in-out ${
@@ -230,6 +154,7 @@ export const Menu = ({
           }`}
         >
           <Settings
+// ... (omito props)
             openAiKey={openAiKey}
             elevenLabsKey={elevenLabsKey}
             openRouterKey={openRouterKey}
