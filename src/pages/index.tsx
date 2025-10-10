@@ -24,7 +24,7 @@ import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
 import { LoadingScreen } from "@/components/loadingScreen";
-import { ChatLog } from "@/components/ChatLog"; // Importación correcta
+import { ChatLog } from "@/components/ChatLog";
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -484,8 +484,6 @@ export default function Home() {
           onChangeUiColor={setUiColor}
           isReasoningEnabled={isReasoningEnabled} 
           onChangeReasoningEnabled={setIsReasoningEnabled}
-          {/* ⭐️ CORRECCIÓN APLICADA EN LÍNEA 503 (aproximada) ⭐️ */}
-          {/* Si había una coma o sintaxis incompleta después de la última prop, se elimina. */}
         />
 
         {errorDialog && (
