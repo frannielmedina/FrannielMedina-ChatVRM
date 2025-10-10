@@ -23,19 +23,16 @@ import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
-import { LoadingScreen } from "@/components/loadingScreen";
-// ⭐️ IMPORTAR EL CHATLOG ⭐️
-import { ChatLog } from "@/components/ChatLog"; 
+import { LoadingScreen } from "@/components/loadingScreen"; // Importar LoadingScreen
+import { ChatLog } from "@/components/ChatLog"; // Asegúrate de que esta línea esté presente
 
 const m_plus_2 = M_PLUS_2({
-// ... (omito código M_PLUS_2)
   variable: "--font-m-plus-2",
   display: "swap",
   preload: false,
 });
 
 const montserrat = Montserrat({
-// ... (omito código montserrat)
   variable: "--font-montserrat",
   display: "swap",
   subsets: ["latin"],
@@ -61,26 +58,23 @@ export default function Home() {
   const [restreamTokens, setRestreamTokens] = useState<any>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
-
-  // ⭐️ NUEVO ESTADO PARA CONTROLAR LA VISIBILIDAD DEL LOG ⭐️
-  const [isChatLogOpen, setIsChatLogOpen] = useState(false);
+  
+  // ⭐️ ESTADO DE VISIBILIDAD DEL LOG (se maneja en Menu.tsx, pero lo mantenemos por si el usuario lo necesita)
+  // const [isChatLogOpen, setIsChatLogOpen] = useState(false); 
 
   // --- UI y Modelos ---
-// ... (omito código de UI)
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa");
   const [errorDialog, setErrorDialog] = useState<ErrorDialogProps | null>(null);
   const [showIntroduction, setShowIntroduction] = useState(true); 
   
   // --- Estados de Carga ---
-// ... (omito código de carga)
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
 
   const [isReasoningEnabled, setIsReasoningEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-// ... (omito código de localStorage)
       const saved = localStorage.getItem('isReasoningEnabled');
       return saved ? JSON.parse(saved) : false; 
     }
@@ -95,7 +89,6 @@ export default function Home() {
   });
 
   const showCountdownDialog = (title: string, message: string, code?: number, countdown = 10) => {
-// ... (omito código de showCountdownDialog)
     setErrorDialog({
       title,
       message,
@@ -106,7 +99,6 @@ export default function Home() {
   };
   
   useEffect(() => {
-// ... (omito código de useEffect de inicialización)
     if (typeof window === "undefined") return;
     
     // Cargar estado de la introducción
@@ -119,7 +111,7 @@ export default function Home() {
     const initialLoadTimer = setTimeout(() => {
         setLoadingProgress(50); 
     }, 500);
-// ... (omito código de carga de localStorage)
+
     const saved = window.localStorage.getItem("chatVRMParams");
     if (saved) {
       try {
@@ -150,12 +142,116 @@ export default function Home() {
 
     return () => clearTimeout(initialLoadTimer);
   }, []);
-// ... (omito handleVrmLoadProgress, handleLoadingAnimationEnd, useEffect de chatVRMParams)
-// ... (omito useEffect de backgroundImage, handleDeleteAllData, handleChangeChatLog, handleSpeakAi)
+
+  // Función de callback para actualizar el progreso de la carga del VRM
+  const handleVrmLoadProgress = useCallback((progress: number) => {
+    // Escala el progreso de 0-100 del VRM al 50-100 total
+    const totalProgress = 50 + (progress / 2);
+    setLoadingProgress(totalProgress);
+    if (progress === 100) {
+      setTimeout(() => setIsLoading(false), 500); // Pequeño retraso para la animación final
+    }
+  }, []);
+
+  const handleLoadingAnimationEnd = useCallback(() => {
+    // Si la introducción debe mostrarse, la mostramos después de la carga
+    const introStatus = localStorage.getItem("chatVRM_hide_intro");
+    if (introStatus !== "true") {
+        setShowIntroduction(true);
+    }
+  }, []);
+
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    process.nextTick(() => {
+      try {
+        window.localStorage.setItem(
+          "chatVRMParams",
+          JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId, isReasoningEnabled })
+        );
+        window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
+        window.localStorage.setItem("uiColor", uiColor);
+        localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled)); 
+      } catch (e) {
+        console.warn("Failed to write chatVRMParams to localStorage", e);
+      }
+    });
+  }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor, isReasoningEnabled]);
+
+  useEffect(() => {
+    if (backgroundImage) {
+      document.body.style.backgroundImage = `url(${backgroundImage})`;
+    } else {
+      document.body.style.backgroundImage = `url(${buildUrl("/bg-c.png")})`;
+    }
+  }, [backgroundImage]);
+
+  const handleDeleteAllData = useCallback(() => {
+    const isConfirmed = window.confirm("¿Estás seguro de que quieres eliminar TODOS los datos de ChatVRM (claves API, historial, configuraciones)? Esta acción es irreversible.");
+    if (isConfirmed) {
+      localStorage.clear();
+      window.location.reload();
+    }
+  }, []);
+
+  const handleChangeChatLog = useCallback(
+    (targetIndex: number, text: string) => {
+      const newChatLog = chatLog.map((v: Message, i) => {
+        return i === targetIndex ? { role: v.role, content: text } : v;
+      });
+
+      setChatLog(newChatLog);
+    },
+    [chatLog]
+  );
+
+  const handleSpeakAi = useCallback(
+    async (
+      screenplay: Screenplay,
+      elevenLabsKeyParam: string,
+      elevenLabsParamParam: ElevenLabsParam,
+      onStart?: () => void,
+      onEnd?: () => void
+    ) => {
+      setIsAISpeaking(true);
+      try {
+        await speakCharacter(
+          screenplay,
+          elevenLabsKeyParam,
+          elevenLabsParamParam,
+          viewer,
+          () => {
+            setIsPlayingAudio(true);
+            onStart?.();
+          },
+          () => {
+            setIsPlayingAudio(false);
+            onEnd?.();
+          }
+        );
+      } catch (error) {
+        setIsAISpeaking(false);
+        const errorMessage = error instanceof Error ? error.message : "Error desconocido";
+        console.error('Error during AI speech (ElevenLabs):', errorMessage);
+
+        if (errorMessage.includes("401")) {
+          showCountdownDialog("Error de API de ElevenLabs", "La API de ElevenLabs no funciona o es incorrecta.");
+        } else {
+          showCountdownDialog(
+            "¡Vaya! Algo malo ha pasado con la API de ElevenLabs",
+            "Chequea los créditos en tu cuenta de ElevenLabs o probablemente la API de ElevenLabs está caída."
+          );
+        }
+      } finally {
+        setIsAISpeaking(false);
+      }
+    },
+    [viewer]
+  );
 
   const handleSendChat = useCallback(
     async (text: string) => {
-// ... (La lógica de handleSendChat que asegura el historial completo se mantiene, no la modificamos)
       const newMessage = text;
       if (newMessage == null) return;
 
@@ -178,17 +274,23 @@ export default function Home() {
           finalSystemPrompt = ANTI_REASONING_PROMPT + "\n\n" + finalSystemPrompt;
       }
       
-      // ⭐️ Se mantiene la corrección del historial ⭐️
+      // ⭐️ CORRECCIÓN CLAVE: SE CONSTRUYE EL ARRAY CON EL HISTORIAL COMPLETO ⭐️
       const messagesToSend: Message[] = [
+          // 1. System Prompt (siempre el primero)
           { role: "system", content: finalSystemPrompt },
+          
+          // 2. Historial de mensajes anterior (para la memoria/contexto)
+          // Se usa chatLog que es el estado ANTERIOR a la actualización del mensaje del usuario
           ...chatLog.filter(m => m.role !== 'system'), 
+          
+          // 3. Nuevo mensaje del usuario
           { role: "user", content: newMessage },
       ];
       
+      // Se utiliza messagesToSend en lugar de processedMessages o compatibilityMessage
       const modelName = OPENROUTER_MODELS.find(m => m.id === selectedModelId)?.model || OPENROUTER_MODELS[0].model;
 
       const stream = await getChatResponseStream(messagesToSend, modelName, openRouterKey).catch(
-// ... (omito lógica de errores y stream processing)
         (e: any) => {
           setChatProcessing(false);
           const errorMsg = (e && e.message) ? e.message : String(e);
@@ -292,6 +394,35 @@ export default function Home() {
     [systemPrompt, chatLog, handleSpeakAi, elevenLabsKey, elevenLabsParam, openRouterKey, selectedModelId, isReasoningEnabled]
   );
 
+  const handleTokensUpdate = useCallback((tokens: any) => {
+    setRestreamTokens(tokens);
+  }, []);
+
+  useEffect(() => {
+    websocketService.setLLMCallback(async (message: string): Promise<LLMCallbackResult> => {
+      try {
+        if (isAISpeaking || isPlayingAudio || chatProcessing) {
+          console.log('Skipping message processing - system busy');
+          return {
+            processed: false,
+            error: 'System is busy processing previous message'
+          };
+        }
+
+        await handleSendChat(message);
+        return {
+          processed: true
+        };
+      } catch (error) {
+        console.error('Error processing message:', error);
+        return {
+          processed: false,
+          error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
+      }
+    });
+  }, [handleSendChat, chatProcessing, isPlayingAudio, isAISpeaking]);
+
   const handleOpenRouterKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newKey = event.target.value;
     setOpenRouterKey(newKey);
@@ -304,10 +435,6 @@ export default function Home() {
           localStorage.setItem("chatVRM_hide_intro", "true");
       }
   };
-
-  // ⭐️ NUEVOS MANEJADORES PARA EL CHAT LOG ⭐️
-  const handleOpenChatLog = () => setIsChatLogOpen(true);
-  const handleCloseChatLog = () => setIsChatLogOpen(false);
 
 
   return (
@@ -324,7 +451,6 @@ export default function Home() {
       {/* Introducción (Solo se muestra si isLoading es false Y showIntroduction es true) */}
       {!isLoading && showIntroduction && (
         <Introduction
-// ... (omito props)
           openAiKey={openAiKey}
           elevenLabsKey={elevenLabsKey}
           openRouterKey={openRouterKey} 
@@ -346,7 +472,6 @@ export default function Home() {
         />
 
         <Menu
-// ... (omito props)
           openAiKey={openAiKey}
           elevenLabsKey={elevenLabsKey}
           openRouterKey={openRouterKey}
@@ -375,19 +500,10 @@ export default function Home() {
           onChangeUiColor={setUiColor}
           isReasoningEnabled={isReasoningEnabled} 
           onChangeReasoningEnabled={setIsReasoningEnabled}
-          // ⭐️ PASAR EL MANEJADOR DE APERTURA AL MENU ⭐️
-          onOpenChatLog={handleOpenChatLog} 
-        />
-
-        {/* ⭐️ RENDERIZAR EL CHAT LOG COMO OVERLAY CONTROLADO ⭐️ */}
-        <ChatLog
-          messages={chatLog}
-          isOpen={isChatLogOpen}
-          onClose={handleCloseChatLog}
+          {/* ⭐️ CORRECCIÓN AQUÍ: Se eliminó la prop 'onOpenChatLog' ya que se maneja dentro de Menu ⭐️ */}
         />
 
         {errorDialog && (
-// ... (omito ErrorDialog)
           <ErrorDialog
             title={errorDialog.title}
             message={errorDialog.message}
