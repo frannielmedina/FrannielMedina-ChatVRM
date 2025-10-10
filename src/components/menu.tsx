@@ -228,6 +228,7 @@ export const Menu = ({
             <ChatLog 
               messages={chatLog} 
               onClose={() => setShowChatLog(false)} // Usa la función de cierre que está en ChatLog.tsx
+              isOpen={showChatLog} // ⬅️ CORRECCIÓN: Se añade la prop 'isOpen' requerida por ChatLog
             />
           </div>
         </div>
