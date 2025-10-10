@@ -23,8 +23,8 @@ import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
-import { LoadingScreen } from "@/components/loadingScreen"; // Importar LoadingScreen
-import { ChatLog } from "@/components/ChatLog"; // Asegúrate de que esta línea esté presente
+import { LoadingScreen } from "@/components/loadingScreen";
+import { ChatLog } from "@/components/ChatLog"; // Importación correcta
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -59,9 +59,6 @@ export default function Home() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   
-  // ⭐️ ESTADO DE VISIBILIDAD DEL LOG (se maneja en Menu.tsx, pero lo mantenemos por si el usuario lo necesita)
-  // const [isChatLogOpen, setIsChatLogOpen] = useState(false); 
-
   // --- UI y Modelos ---
   const [selectedModelId, setSelectedModelId] = useState<string>(DEFAULT_MODEL_ID);
   const [uiColor, setUiColor] = useState<string>("#8e24aa");
@@ -101,13 +98,11 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     
-    // Cargar estado de la introducción
     const introStatus = window.localStorage.getItem("chatVRM_hide_intro");
     if (introStatus === "true") {
       setShowIntroduction(false);
     }
     
-    // Simular carga de recursos iniciales (además del VRM)
     const initialLoadTimer = setTimeout(() => {
         setLoadingProgress(50); 
     }, 500);
@@ -143,18 +138,15 @@ export default function Home() {
     return () => clearTimeout(initialLoadTimer);
   }, []);
 
-  // Función de callback para actualizar el progreso de la carga del VRM
   const handleVrmLoadProgress = useCallback((progress: number) => {
-    // Escala el progreso de 0-100 del VRM al 50-100 total
     const totalProgress = 50 + (progress / 2);
     setLoadingProgress(totalProgress);
     if (progress === 100) {
-      setTimeout(() => setIsLoading(false), 500); // Pequeño retraso para la animación final
+      setTimeout(() => setIsLoading(false), 500);
     }
   }, []);
 
   const handleLoadingAnimationEnd = useCallback(() => {
-    // Si la introducción debe mostrarse, la mostramos después de la carga
     const introStatus = localStorage.getItem("chatVRM_hide_intro");
     if (introStatus !== "true") {
         setShowIntroduction(true);
@@ -274,20 +266,12 @@ export default function Home() {
           finalSystemPrompt = ANTI_REASONING_PROMPT + "\n\n" + finalSystemPrompt;
       }
       
-      // ⭐️ CORRECCIÓN CLAVE: SE CONSTRUYE EL ARRAY CON EL HISTORIAL COMPLETO ⭐️
       const messagesToSend: Message[] = [
-          // 1. System Prompt (siempre el primero)
           { role: "system", content: finalSystemPrompt },
-          
-          // 2. Historial de mensajes anterior (para la memoria/contexto)
-          // Se usa chatLog que es el estado ANTERIOR a la actualización del mensaje del usuario
           ...chatLog.filter(m => m.role !== 'system'), 
-          
-          // 3. Nuevo mensaje del usuario
           { role: "user", content: newMessage },
       ];
       
-      // Se utiliza messagesToSend en lugar de processedMessages o compatibilityMessage
       const modelName = OPENROUTER_MODELS.find(m => m.id === selectedModelId)?.model || OPENROUTER_MODELS[0].model;
 
       const stream = await getChatResponseStream(messagesToSend, modelName, openRouterKey).catch(
@@ -500,7 +484,8 @@ export default function Home() {
           onChangeUiColor={setUiColor}
           isReasoningEnabled={isReasoningEnabled} 
           onChangeReasoningEnabled={setIsReasoningEnabled}
-          {/* ⭐️ CORRECCIÓN AQUÍ: Se eliminó la prop 'onOpenChatLog' ya que se maneja dentro de Menu ⭐️ */}
+          {/* ⭐️ CORRECCIÓN APLICADA EN LÍNEA 503 (aproximada) ⭐️ */}
+          {/* Si había una coma o sintaxis incompleta después de la última prop, se elimina. */}
         />
 
         {errorDialog && (
