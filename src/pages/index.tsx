@@ -24,7 +24,7 @@ import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { ErrorDialog, ErrorDialogProps } from "@/components/errorDialog";
 import { OPENROUTER_MODELS, DEFAULT_MODEL_ID } from "@/features/constants/openRouterModels";
 import { LoadingScreen } from "@/components/loadingScreen";
-import { ChatLog } from "@/components/chatLog";
+import { ChatLog } from "@/components/chatLog"; // Asegúrate de que esta importación esté presente
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -69,14 +69,21 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
+  // 🚨 ESTADOS AÑADIDOS
 
   const [isReasoningEnabled, setIsReasoningEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('isReasoningEnabled');
-      // La lógica en localStorage.getItem('isReasoningEnabled') ahora es redundante porque
-      // también se está cargando dentro del useEffect de abajo, pero se mantiene 
-      // para consistencia si se elimina el useEffect.
       return saved ? JSON.parse(saved) : false; 
+    }
+    return false;
+  });
+  
+  // 🚨 NUEVO ESTADO: Visibilidad del ChatLog en la pantalla principal (Modo Streamer)
+  const [isShowChatLogEnabled, setIsShowChatLogEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('isShowChatLogEnabled');
+      return saved ? JSON.parse(saved) : false; // Por defecto: oculto
     }
     return false;
   });
@@ -115,14 +122,11 @@ export default function Home() {
       try {
         const params = JSON.parse(saved);
         
-        // 🚨 CAMBIO CLAVE 1: Asegurar que systemPrompt se carga desde el estado guardado
         if (params.systemPrompt) setSystemPrompt(params.systemPrompt); 
         
         if (params.elevenLabsParam) setElevenLabsParam(params.elevenLabsParam);
         if (params.chatLog) setChatLog(params.chatLog);
         if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
-        // La lógica de isReasoningEnabled de chatVRMParams es redundante ya que se carga de su propia key
-        // if (params.isReasoningEnabled !== undefined) setIsReasoningEnabled(params.isReasoningEnabled); 
       } catch (e) {
         console.warn("Failed to parse chatVRMParams from localStorage", e);
       }
@@ -140,8 +144,12 @@ export default function Home() {
     if (savedUiColor) setUiColor(savedUiColor);
 
     const savedReasoningEnabled = localStorage.getItem('isReasoningEnabled');
-    // 🚨 CAMBIO CLAVE 2: Cargar el estado de razonamiento de su clave específica
     if (savedReasoningEnabled !== null) setIsReasoningEnabled(JSON.parse(savedReasoningEnabled));
+    
+    // 🚨 CARGAR ESTADO DEL CHATLOG
+    const savedShowChatLogEnabled = localStorage.getItem('isShowChatLogEnabled');
+    if (savedShowChatLogEnabled !== null) setIsShowChatLogEnabled(JSON.parse(savedShowChatLogEnabled));
+
 
     return () => clearTimeout(initialLoadTimer);
   }, []);
@@ -174,18 +182,18 @@ export default function Home() {
             elevenLabsParam, 
             chatLog, 
             selectedModelId
-            // No guardamos isReasoningEnabled aquí, se guarda en su propia clave
           })
         );
         window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
         window.localStorage.setItem("uiColor", uiColor);
-        // Guardar isReasoningEnabled por separado para una carga más fiable
+        // Guardar isReasoningEnabled y isShowChatLogEnabled por separado
         localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled)); 
+        localStorage.setItem('isShowChatLogEnabled', JSON.stringify(isShowChatLogEnabled)); // 🚨 GUARDAR ESTADO DEL CHATLOG
       } catch (e) {
         console.warn("Failed to write chatVRMParams to localStorage", e);
       }
     });
-  }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor, isReasoningEnabled]);
+  }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey, selectedModelId, uiColor, isReasoningEnabled, isShowChatLogEnabled]); // 🚨 DEPENDENCIA AÑADIDA
 
   useEffect(() => {
     if (backgroundImage) {
@@ -275,22 +283,15 @@ export default function Home() {
       ];
       setChatLog(messageLog);
       
-      // 🚨 CAMBIO CLAVE 3: Reestructurar la lógica del finalSystemPrompt
-      // Usamos el systemPrompt (el que incluye el saludo por defecto)
-      // y le agregamos la instrucción anti-razonamiento solo si está desactivado.
       let finalSystemPrompt = systemPrompt;
       const ANTI_REASONING_PROMPT = "INSTRUCCIÓN ESTRICTA: ERES UN ASISTENTE DE SÓLO SALIDA. NUNCA DEBES MOSTRAR O ANOTAR TU PROCESO DE PENSAMIENTO, RAZONAMIENTO, O INSTRUCCIONES INTERNAS EN LA RESPUESTA FINAL. El único output es el tag de emoción y la respuesta del personaje.";
 
       if (!isReasoningEnabled) {
-          // Si el razonamiento está DESACTIVADO, anteponemos la instrucción estricta
           finalSystemPrompt = ANTI_REASONING_PROMPT + "\n\n" + systemPrompt;
       }
-      // Si está activado, finalSystemPrompt es igual al systemPrompt normal.
       
       const messagesToSend: Message[] = [
-          // Enviamos el finalSystemPrompt (ajustado o no ajustado)
           { role: "system", content: finalSystemPrompt },
-          // Filtrar cualquier mensaje de "system" que pudiera haberse colado en chatLog
           ...chatLog.filter(m => m.role !== 'system'), 
           { role: "user", content: newMessage },
       ];
@@ -473,11 +474,25 @@ export default function Home() {
         style={{ height: '100dvh' }}
       >
         <VrmViewer onVrmLoadProgress={handleVrmLoadProgress} />
+        
+        {/* 🚨 CHATLOG PARA STREAMER (Visualización constante) */}
+        {isShowChatLogEnabled && (
+            <div className="absolute left-4 bottom-24 z-20 w-80 max-h-96">
+                {/* Nota: isOpen está siempre en true aquí para la visualización constante */}
+                <ChatLog
+                    messages={chatLog}
+                    isOpen={true} 
+                    onClose={() => { /* Opción constante, no se cierra con un botón */ }}
+                />
+            </div>
+        )}
+
         <MessageInputContainer
           isChatProcessing={chatProcessing || isAISpeaking || isPlayingAudio}
           onChatProcessStart={handleSendChat}
         />
 
+        {/* 🚨 PASSING DE NUEVAS PROPS DE CHATLOG */}
         <Menu
           openAiKey={openAiKey}
           elevenLabsKey={elevenLabsKey}
@@ -507,6 +522,8 @@ export default function Home() {
           onChangeUiColor={setUiColor}
           isReasoningEnabled={isReasoningEnabled} 
           onChangeReasoningEnabled={setIsReasoningEnabled}
+          isShowChatLogEnabled={isShowChatLogEnabled} // 🚨 PROP AÑADIDA
+          onChangeShowChatLog={setIsShowChatLogEnabled} // 🚨 PROP AÑADIDA
         />
 
         {errorDialog && (
