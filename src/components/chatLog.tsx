@@ -2,11 +2,10 @@
 import { useEffect, useRef } from "react";
 import { Message } from "@/features/messages/messages";
 
-// CORRECCIÓN CLAVE: Añadir propiedades para control de visibilidad
 type Props = {
   messages: Message[];
-  isOpen: boolean;       // Nuevo: Controla si se muestra o no
-  onClose: () => void;   // Nuevo: Función para cerrar el log
+  isOpen: boolean;       
+  onClose: () => void;   
 };
 
 export const ChatLog = ({ messages, isOpen, onClose }: Props) => {
@@ -14,7 +13,6 @@ export const ChatLog = ({ messages, isOpen, onClose }: Props) => {
 
   // Efecto para hacer scroll al mensaje más reciente
   useEffect(() => {
-    // Si el log está cerrado, no se hace nada.
     if (isOpen) {
       chatScrollRef.current?.scrollIntoView({
         behavior: "smooth",
@@ -23,29 +21,25 @@ export const ChatLog = ({ messages, isOpen, onClose }: Props) => {
     }
   }, [messages, isOpen]);
   
-  // Si no está abierto, no renderiza nada.
   if (!isOpen) {
     return null;
   }
 
-  // Se añaden estilos para:
-  // 1. Ser un overlay de pantalla completa (fixed o absolute inset-0).
-  // 2. Fondo semi-transparente (rgba(0, 0, 0, 0.5) o bg-black/50)
   return (
-    // ⭐️ Contenedor principal: Overlay transparente ⭐️
+    // ⭐️ Contenedor principal: Overlay de pantalla completa con z-index alto ⭐️
     <div 
-      className="absolute inset-0 z-40 p-4 md:p-8 flex flex-col items-center justify-start"
-      // Fondo semi-transparente y efecto de desenfoque, ideal para streaming.
+      className="fixed inset-0 z-40 p-4 md:p-8 flex flex-col items-center justify-start"
+      // Estilo para el fondo semi-transparente y blur (como overlay de stream)
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)' }}
-      onClick={onClose} // Cerrar al hacer clic fuera del contenido del log (en el fondo)
+      onClick={onClose}
     >
       <div 
-        // Contenedor interno: Se le pone un fondo blanco semi-transparente
-        className="w-full max-w-lg flex flex-col h-[80%] mt-16 rounded-xl shadow-2xl bg-white/70 overflow-hidden"
-        onClick={(e) => e.stopPropagation()} // Evita que el clic en el contenido cierre el log
+        // Contenedor interno del log: Fondo claro, altura limitada y scroll
+        className="w-full max-w-lg flex flex-col h-[80%] mt-16 rounded-xl shadow-2xl bg-white/95 overflow-hidden"
+        onClick={(e) => e.stopPropagation()} 
       >
         {/* Encabezado con título y botón de cierre */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-300/50 bg-white/90">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white/90 sticky top-0">
           <h2 className="text-xl font-bold" style={{ color: 'var(--main-ui-color)' }}>
             Registro de Conversación
           </h2>
@@ -60,43 +54,61 @@ export const ChatLog = ({ messages, isOpen, onClose }: Props) => {
           </button>
         </div>
 
-        {/* Historial de mensajes */}
-        {/* Modificamos el div contenedor del historial para que sea scrollable y esté dentro del contenedor transparente */}
+        {/* Historial de mensajes Scrollable */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages
-            .filter(msg => msg.role !== 'system') // ⭐️ Opcional: Ocultar mensajes de "system" en el log visible
+            .filter(msg => msg.role !== 'system')
             .map((msg, i) => (
               <div 
                 key={i} 
-                ref={messages.length - 1 === i ? chatScrollRef : null}
+                // Añadimos la clase de alineación al div padre para controlar la posición
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                ref={messages.length - 1 === i ? chatScrollRef : null}
               >
-                {/* ⭐️ Usamos el componente Chat existente pero le quitamos el div contenedor ya que Chat lo renderiza */}
                 <Chat role={msg.role} message={msg.content} />
               </div>
             ))
           }
         </div>
-
       </div>
     </div>
   );
 };
 
-// Componente Chat modificado para que sea solo la burbuja
+// ⭐️ COMPONENTE CHAT MODIFICADO PARA EL ESTILO DE LA CAPTURA ⭐️
 const Chat = ({ role, message }: { role: string; message: string }) => {
-  const roleColor =
-    role === "assistant" ? "bg-rose-100 text-gray-800" : "bg-amber-100 text-gray-800"; // Colores de las capturas
-  const roleText = role === "assistant" ? "text-gray-800" : "text-gray-800"; // Mismo color para texto
-  const offsetX = role === "user" ? "justify-end" : "justify-start"; // Usaremos esto para justificar en el padre
+  // Ajustamos los colores y estilos para emular la burbuja de la captura.
   
-  // ⭐️ Eliminamos los divs de posicionamiento externo y simplificamos el diseño de las burbujas ⭐️
+  const isAssistant = role === "assistant";
+  
+  // Colores principales de la burbuja (fondo y borde superior)
+  const headerBgColor = isAssistant ? "bg-pink-600" : "bg-orange-400"; // Tonos intensos para el encabezado
+  const headerTextColor = "text-white"; 
+  
+  // Colores del cuerpo del mensaje
+  const bodyBgColor = "bg-white";
+  const bodyTextColor = isAssistant ? "text-pink-600" : "text-orange-400"; // Color del texto es el mismo que el header/burbuja
+
+  // Alineación dentro de su contenedor.
+  const alignment = isAssistant ? "pr-0" : "pl-0";
+
   return (
-    <div className={`max-w-[80%] p-3 rounded-xl shadow-md ${roleColor}`}>
-      <span className="font-semibold text-xs uppercase" style={{ color: role === 'user' ? '#D69E2E' : '#C53030' }}>
-        {role === "assistant" ? "CHARACTER" : "YOU"}
-      </span>
-      <p className="mt-1 whitespace-pre-wrap typography-16 font-M_PLUS_2 font-bold">{message}</p>
+    // Se mantiene la estructura de dos bloques para el estilo que quieres.
+    <div className={`mx-auto max-w-[80%] my-0 ${alignment}`}>
+      
+      {/* Bloque superior (YOU / CHARACTER) */}
+      <div
+        className={`px-3 py-1 rounded-t-lg font-Montserrat font-bold tracking-wider text-sm shadow-md ${headerBgColor} ${headerTextColor}`}
+      >
+        {isAssistant ? "CHARACTER" : "YOU"}
+      </div>
+      
+      {/* Bloque inferior (Mensaje) */}
+      <div className={`px-3 py-2 ${bodyBgColor} rounded-b-lg shadow-md`}>
+        <div className={`typography-16 font-M_PLUS_2 font-bold whitespace-pre-wrap ${bodyTextColor}`}>
+          {message}
+        </div>
+      </div>
     </div>
   );
 };
