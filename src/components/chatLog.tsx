@@ -1,4 +1,4 @@
-// src/components/ChatLog.tsx
+// src/components/ChatLog.tsx (Código completo con el nuevo diseño)
 import { useEffect, useRef } from "react";
 import { Message } from "@/features/messages/messages";
 
@@ -31,12 +31,12 @@ export const ChatLog = ({ messages, isOpen, onClose }: Props) => {
       className="fixed inset-0 z-40 p-4 md:p-8 flex flex-col items-center justify-start"
       // Estilo para el fondo semi-transparente y blur (como overlay de stream)
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(3px)' }}
-      onClick={onClose}
+      onClick={onClose} // Cierra al hacer clic en el fondo oscuro
     >
       <div 
         // Contenedor interno del log: Fondo claro, altura limitada y scroll
         className="w-full max-w-lg flex flex-col h-[80%] mt-16 rounded-xl shadow-2xl bg-white/95 overflow-hidden"
-        onClick={(e) => e.stopPropagation()} 
+        onClick={(e) => e.stopPropagation()} // Evita que el clic dentro cierre el log
       >
         {/* Encabezado con título y botón de cierre */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-white/90 sticky top-0">
@@ -57,11 +57,10 @@ export const ChatLog = ({ messages, isOpen, onClose }: Props) => {
         {/* Historial de mensajes Scrollable */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages
-            .filter(msg => msg.role !== 'system')
+            .filter(msg => msg.role !== 'system') // Opcional: Ocultar mensajes de "system" en el log visible
             .map((msg, i) => (
               <div 
                 key={i} 
-                // Añadimos la clase de alineación al div padre para controlar la posición
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 ref={messages.length - 1 === i ? chatScrollRef : null}
               >
@@ -77,24 +76,21 @@ export const ChatLog = ({ messages, isOpen, onClose }: Props) => {
 
 // ⭐️ COMPONENTE CHAT MODIFICADO PARA EL ESTILO DE LA CAPTURA ⭐️
 const Chat = ({ role, message }: { role: string; message: string }) => {
-  // Ajustamos los colores y estilos para emular la burbuja de la captura.
-  
   const isAssistant = role === "assistant";
   
-  // Colores principales de la burbuja (fondo y borde superior)
-  const headerBgColor = isAssistant ? "bg-pink-600" : "bg-orange-400"; // Tonos intensos para el encabezado
+  // Colores de la captura con las burbujas separadas por el rol (Ajustados para Tailwind)
+  // Puedes cambiar estos colores por los que uses en tus capturas (e.g. pink-600, orange-400)
+  const headerBgColor = isAssistant ? "bg-pink-600" : "bg-orange-400"; 
   const headerTextColor = "text-white"; 
   
-  // Colores del cuerpo del mensaje
-  const bodyBgColor = "bg-white";
-  const bodyTextColor = isAssistant ? "text-pink-600" : "text-orange-400"; // Color del texto es el mismo que el header/burbuja
-
-  // Alineación dentro de su contenedor.
-  const alignment = isAssistant ? "pr-0" : "pl-0";
+  // Fondo del mensaje principal (más claro o blanco)
+  const bodyBgColor = "bg-white"; 
+  // Texto del color del encabezado
+  const bodyTextColor = isAssistant ? "text-pink-600" : "text-orange-400"; 
 
   return (
     // Se mantiene la estructura de dos bloques para el estilo que quieres.
-    <div className={`mx-auto max-w-[80%] my-0 ${alignment}`}>
+    <div className={`mx-auto max-w-[80%] my-0`}>
       
       {/* Bloque superior (YOU / CHARACTER) */}
       <div
