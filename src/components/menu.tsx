@@ -21,7 +21,9 @@ type Props = {
   selectedModelId: string;
   uiColor: string; 
   isReasoningEnabled: boolean;
+  isShowChatLogEnabled: boolean; // 🚨 AÑADIDO: Prop para el estado de ChatLog
   onChangeReasoningEnabled: (isEnabled: boolean) => void;
+  onChangeShowChatLog: (isEnabled: boolean) => void; // 🚨 AÑADIDO: Prop para cambiar el estado de ChatLog
   onChangeSystemPrompt: (systemPrompt: string) => void;
   onChangeAiKey: (key: string) => void;
   onChangeElevenLabsKey: (key: string) => void;
@@ -68,6 +70,8 @@ export const Menu = ({
   onChangeOpenRouterKey,
   isReasoningEnabled,
   onChangeReasoningEnabled,
+  isShowChatLogEnabled, // 🚨 DESESTRUCTURADO
+  onChangeShowChatLog, // 🚨 DESESTRUCTURADO
 }: Props) => {
   // Usamos un estado intermedio para permitir que la animación de salida termine antes de desmontar el componente.
   const [isSettingsMounted, setIsSettingsMounted] = useState(false);
@@ -263,6 +267,8 @@ export const Menu = ({
             onChangeUiColor={onChangeUiColor}
             isReasoningEnabled={isReasoningEnabled} 
             onChangeReasoningEnabled={onChangeReasoningEnabled}
+            isShowChatLogEnabled={isShowChatLogEnabled} // 🚨 PASANDO NUEVA PROP
+            onChangeShowChatLog={onChangeShowChatLog}   // 🚨 PASANDO NUEVA PROP
           />
         </div>
       )}
