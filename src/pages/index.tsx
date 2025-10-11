@@ -73,6 +73,9 @@ export default function Home() {
   const [isReasoningEnabled, setIsReasoningEnabled] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('isReasoningEnabled');
+      // La lógica en localStorage.getItem('isReasoningEnabled') ahora es redundante porque
+      // también se está cargando dentro del useEffect de abajo, pero se mantiene 
+      // para consistencia si se elimina el useEffect.
       return saved ? JSON.parse(saved) : false; 
     }
     return false;
@@ -111,11 +114,15 @@ export default function Home() {
     if (saved) {
       try {
         const params = JSON.parse(saved);
-        if (params.systemPrompt) setSystemPrompt(params.systemPrompt);
+        
+        // 🚨 CAMBIO CLAVE 1: Asegurar que systemPrompt se carga desde el estado guardado
+        if (params.systemPrompt) setSystemPrompt(params.systemPrompt); 
+        
         if (params.elevenLabsParam) setElevenLabsParam(params.elevenLabsParam);
         if (params.chatLog) setChatLog(params.chatLog);
         if (params.selectedModelId) setSelectedModelId(params.selectedModelId);
-        if (params.isReasoningEnabled !== undefined) setIsReasoningEnabled(params.isReasoningEnabled); 
+        // La lógica de isReasoningEnabled de chatVRMParams es redundante ya que se carga de su propia key
+        // if (params.isReasoningEnabled !== undefined) setIsReasoningEnabled(params.isReasoningEnabled); 
       } catch (e) {
         console.warn("Failed to parse chatVRMParams from localStorage", e);
       }
@@ -133,6 +140,7 @@ export default function Home() {
     if (savedUiColor) setUiColor(savedUiColor);
 
     const savedReasoningEnabled = localStorage.getItem('isReasoningEnabled');
+    // 🚨 CAMBIO CLAVE 2: Cargar el estado de razonamiento de su clave específica
     if (savedReasoningEnabled !== null) setIsReasoningEnabled(JSON.parse(savedReasoningEnabled));
 
     return () => clearTimeout(initialLoadTimer);
@@ -153,17 +161,25 @@ export default function Home() {
     }
   }, []);
 
-
+  // Persistencia de estados
   useEffect(() => {
     if (typeof window === "undefined") return;
     process.nextTick(() => {
       try {
         window.localStorage.setItem(
           "chatVRMParams",
-          JSON.stringify({ systemPrompt, elevenLabsParam, chatLog, selectedModelId, isReasoningEnabled })
+          // Guardamos solo los parámetros que controlan el diálogo
+          JSON.stringify({ 
+            systemPrompt, 
+            elevenLabsParam, 
+            chatLog, 
+            selectedModelId
+            // No guardamos isReasoningEnabled aquí, se guarda en su propia clave
+          })
         );
         window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
         window.localStorage.setItem("uiColor", uiColor);
+        // Guardar isReasoningEnabled por separado para una carga más fiable
         localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled)); 
       } catch (e) {
         console.warn("Failed to write chatVRMParams to localStorage", e);
@@ -259,15 +275,22 @@ export default function Home() {
       ];
       setChatLog(messageLog);
       
+      // 🚨 CAMBIO CLAVE 3: Reestructurar la lógica del finalSystemPrompt
+      // Usamos el systemPrompt (el que incluye el saludo por defecto)
+      // y le agregamos la instrucción anti-razonamiento solo si está desactivado.
       let finalSystemPrompt = systemPrompt;
       const ANTI_REASONING_PROMPT = "INSTRUCCIÓN ESTRICTA: ERES UN ASISTENTE DE SÓLO SALIDA. NUNCA DEBES MOSTRAR O ANOTAR TU PROCESO DE PENSAMIENTO, RAZONAMIENTO, O INSTRUCCIONES INTERNAS EN LA RESPUESTA FINAL. El único output es el tag de emoción y la respuesta del personaje.";
 
       if (!isReasoningEnabled) {
-          finalSystemPrompt = ANTI_REASONING_PROMPT + "\n\n" + finalSystemPrompt;
+          // Si el razonamiento está DESACTIVADO, anteponemos la instrucción estricta
+          finalSystemPrompt = ANTI_REASONING_PROMPT + "\n\n" + systemPrompt;
       }
+      // Si está activado, finalSystemPrompt es igual al systemPrompt normal.
       
       const messagesToSend: Message[] = [
+          // Enviamos el finalSystemPrompt (ajustado o no ajustado)
           { role: "system", content: finalSystemPrompt },
+          // Filtrar cualquier mensaje de "system" que pudiera haberse colado en chatLog
           ...chatLog.filter(m => m.role !== 'system'), 
           { role: "user", content: newMessage },
       ];
