@@ -1,4 +1,4 @@
-// src/components/settings.tsx
+// src/components/settings.tsx (Código completo corregido)
 import React, { useEffect, useState, cache } from "react";
 import { IconButton } from "./iconButton";
 import { TextButton } from "./textButton";
@@ -39,7 +39,9 @@ type Props = {
   selectedModelId: string;
   uiColor: string;
   isReasoningEnabled: boolean;
+  isShowChatLogEnabled: boolean; // 🚨 NUEVA PROP: Control de visibilidad del ChatLog
   onChangeReasoningEnabled: (isEnabled: boolean) => void;
+  onChangeShowChatLog: (isEnabled: boolean) => void; // 🚨 NUEVA PROP: Función para cambiar la visibilidad del ChatLog
   onClickClose: () => void;
   onChangeAiKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -92,6 +94,8 @@ export const Settings = ({
   onChatMessage,
   isReasoningEnabled,
   onChangeReasoningEnabled,
+  isShowChatLogEnabled, // 🚨 NUEVA PROP
+  onChangeShowChatLog, // 🚨 NUEVA PROP
 }: Props) => {
 
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
@@ -129,6 +133,7 @@ export const Settings = ({
     localStorage.setItem('elevenLabsKey', elevenLabsKey);
     localStorage.setItem('uiColor', uiColor);
     localStorage.setItem('isReasoningEnabled', JSON.stringify(isReasoningEnabled));
+    localStorage.setItem('isShowChatLogEnabled', JSON.stringify(isShowChatLogEnabled)); // 🚨 Guardar estado del ChatLog
     alert("Opciones guardadas con éxito en tu navegador.");
   };
 
@@ -142,6 +147,9 @@ export const Settings = ({
 
     const savedReasoningEnabled = localStorage.getItem('isReasoningEnabled');
     if (savedReasoningEnabled !== null) onChangeReasoningEnabled(JSON.parse(savedReasoningEnabled));
+
+    const savedShowChatLogEnabled = localStorage.getItem('isShowChatLogEnabled'); // 🚨 Cargar estado del ChatLog
+    if (savedShowChatLogEnabled !== null) onChangeShowChatLog(JSON.parse(savedShowChatLogEnabled));
 
     if (window.localStorage.getItem("chatVRMParams")) {
         const params = JSON.parse(window.localStorage.getItem("chatVRMParams") as string);
@@ -158,6 +166,11 @@ export const Settings = ({
   
   const handleToggleReasoning = (event: React.ChangeEvent<HTMLInputElement>) => {
     onChangeReasoningEnabled(event.target.checked);
+  };
+
+  // 🚨 Manejador para el nuevo toggle de ChatLog
+  const handleToggleChatLog = (event: React.ChangeEvent<HTMLInputElement>) => {
+    onChangeShowChatLog(event.target.checked);
   };
 
   return (
@@ -196,13 +209,36 @@ export const Settings = ({
           <div className="bg-white/90 p-6 md:p-10 rounded-xl shadow-2xl border-2 border-gray-100">
             
             {/* Contenedor de Contenido con Transición (Fundido) */}
-            {/* Usamos 'key' para forzar el re-render y activar la animación */}
             <div key={activeTab} className="transition-opacity duration-300 ease-in-out opacity-100 animate-fadeIn"> 
                 {/* Pestaña General */}
                 {activeTab === 'general' && (
                   <div className="space-y-8">
                     <h2 className="typography-24 font-bold" style={{ color: 'var(--main-ui-color)' }}>Opciones Generales</h2>
                     
+                    {/* 🚨 NUEVA CASILLA: Visibilidad de ChatLog */}
+                    <div className="my-16">
+                        <div className="my-16 typography-20 font-bold">Registro de Conversación (Chat Log)</div>
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={isShowChatLogEnabled}
+                                onChange={handleToggleChatLog}
+                                className="form-checkbox h-5 w-5"
+                                style={{ 
+                                    '--tw-ring-color': 'var(--main-ui-color)',
+                                    backgroundColor: isShowChatLogEnabled ? 'var(--main-ui-color)' : 'white',
+                                    borderColor: 'var(--main-ui-color)'
+                                } as React.CSSProperties}
+                            />
+                            <span className="text-gray-800">
+                                Mostrar registro de conversación en la pantalla principal (Ideal para Streamers).
+                            </span>
+                        </label>
+                        <div className="text-sm text-gray-600 mt-2">
+                            Si está activado, el historial de chat se mantendrá visible en la parte inferior izquierda de la pantalla.
+                        </div>
+                    </div>
+
                     <div className="flex gap-4">
                       <TextButton onClick={handleSaveOptions}>Guardar Opciones</TextButton>
                       <TextButton onClick={handleLoadOptions}>Cargar Opciones</TextButton>
@@ -501,7 +537,7 @@ export const Settings = ({
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 mr-2" 
+                            className="h-6 w-6 mr-2" // 🚨 Ajuste a h-6 w-6 para que sea más pequeño
                             fill="currentColor"
                             viewBox="0 0 16 16"
                         >
