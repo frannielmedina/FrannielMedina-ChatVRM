@@ -20,6 +20,8 @@ import { ElevenLabsParam, DEFAULT_ELEVEN_LABS_PARAM } from "@/features/constants
 import { buildUrl } from "@/utils/buildUrl";
 import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
+import { NotificationToast } from "@/components/NotificationToast";
+import { useNotificationContainer } from "@/hooks/useNotification";
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -40,6 +42,7 @@ type LLMCallbackResult = {
 
 export default function Home() {
   const { viewer } = useContext(ViewerContext);
+  const { notifications, removeNotification } = useNotificationContainer();
 
   const [systemPrompt, setSystemPrompt] = useState(SYSTEM_PROMPT);
   const [openAiKey, setOpenAiKey] = useState("");
@@ -52,15 +55,21 @@ export default function Home() {
   const [backgroundImage, setBackgroundImage] = useState<string>('');
   const [restreamTokens, setRestreamTokens] = useState<any>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  // needed because AI speaking could involve multiple audios being played in sequence
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
-    // Try to load from localStorage on initial render
     if (typeof window !== 'undefined') {
       return localStorage.getItem('openRouterKey') || '';
     }
     return '';
   });
+
+  // Apply UI color on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const uiColor = localStorage.getItem('uiColor') || '#856292';
+      document.documentElement.style.setProperty('--color-primary', uiColor);
+    }
+  }, []);
 
   useEffect(() => {
     if (window.localStorage.getItem("chatVRMParams")) {
@@ -75,7 +84,6 @@ export default function Home() {
       const key = window.localStorage.getItem("elevenLabsKey") as string;
       setElevenLabsKey(key);
     }
-    // load openrouter key from localStorage
     const savedOpenRouterKey = localStorage.getItem('openRouterKey');
     if (savedOpenRouterKey) {
       setOpenRouterKey(savedOpenRouterKey);
@@ -91,19 +99,14 @@ export default function Home() {
       window.localStorage.setItem(
         "chatVRMParams",
         JSON.stringify({ systemPrompt, elevenLabsParam, chatLog })
-      )
-
-      // store separately to be backward compatible with local storage data
+      );
       window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
-    }
-    );
+    });
   }, [systemPrompt, elevenLabsParam, chatLog]);
 
   useEffect(() => {
     if (backgroundImage) {
       document.body.style.backgroundImage = `url(${backgroundImage})`;
-      // document.body.style.backgroundSize = 'cover';
-      // document.body.style.backgroundPosition = 'center';
     } else {
       document.body.style.backgroundImage = `url(${buildUrl("/bg-c.png")})`;
     }
@@ -114,15 +117,11 @@ export default function Home() {
       const newChatLog = chatLog.map((v: Message, i) => {
         return i === targetIndex ? { role: v.role, content: text } : v;
       });
-
       setChatLog(newChatLog);
     },
     [chatLog]
   );
 
-  /**
-   * 文ごとに音声を直接でリクエストしながら再生する
-   */
   const handleSpeakAi = useCallback(
     async (
       screenplay: Screenplay,
@@ -131,7 +130,7 @@ export default function Home() {
       onStart?: () => void,
       onEnd?: () => void
     ) => {
-      setIsAISpeaking(true);  // Set speaking state before starting
+      setIsAISpeaking(true);
       try {
         await speakCharacter(
           screenplay, 
@@ -152,29 +151,24 @@ export default function Home() {
       } catch (error) {
         console.error('Error during AI speech:', error);
       } finally {
-        setIsAISpeaking(false);  // Ensure speaking state is reset even if there's an error
+        setIsAISpeaking(false);
       }
     },
     [viewer]
   );
 
-  /**
-   * アシスタントとの会話を行う
-   */
   const handleSendChat = useCallback(
     async (text: string) => {
       const newMessage = text;
       if (newMessage == null) return;
 
       setChatProcessing(true);
-      // Add user's message to chat log
       const messageLog: Message[] = [
         ...chatLog,
         { role: "user", content: newMessage },
       ];
       setChatLog(messageLog);
 
-      // Process messages through MessageMiddleOut
       const messageProcessor = new MessageMiddleOut();
       const processedMessages = messageProcessor.process([
         {
@@ -186,16 +180,22 @@ export default function Home() {
 
       let localOpenRouterKey = openRouterKey;
       if (!localOpenRouterKey) {
-        // fallback to free key for users to try things out
         localOpenRouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY!;
       }
 
-      const stream = await getChatResponseStream(processedMessages, openAiKey, localOpenRouterKey).catch(
-        (e) => {
-          console.error(e);
-          return null;
-        }
-      );
+      // Get selected model
+      const selectedModel = localStorage.getItem('selectedLLMModel') || 'google/gemini-2.0-flash-exp:free';
+
+      const stream = await getChatResponseStream(
+        processedMessages, 
+        openAiKey, 
+        localOpenRouterKey,
+        selectedModel
+      ).catch((e) => {
+        console.error(e);
+        return null;
+      });
+      
       if (stream == null) {
         setChatProcessing(false);
         return;
@@ -206,6 +206,7 @@ export default function Home() {
       let aiTextLog = "";
       let tag = "";
       const sentences = new Array<string>();
+      
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -213,35 +214,26 @@ export default function Home() {
 
           receivedMessage += value;
 
-          // console.log('receivedMessage');
-          // console.log(receivedMessage);
-
-          // 返答内容のタグ部分の検出
           const tagMatch = receivedMessage.match(/^\[(.*?)\]/);
           if (tagMatch && tagMatch[0]) {
             tag = tagMatch[0];
             receivedMessage = receivedMessage.slice(tag.length);
-
-            console.log('tag:');
-            console.log(tag);
+            console.log('tag:', tag);
           }
 
-          // 返答を一単位で切り出して処理する
           const sentenceMatch = receivedMessage.match(
             /^(.+[。．！？\n.!?]|.{10,}[、,])/
           );
+          
           if (sentenceMatch && sentenceMatch[0]) {
             const sentence = sentenceMatch[0];
             sentences.push(sentence);
-
-            console.log('sentence:');
-            console.log(sentence);
+            console.log('sentence:', sentence);
 
             receivedMessage = receivedMessage
               .slice(sentence.length)
               .trimStart();
 
-            // 発話不要/不可能な文字列だった場合はスキップ
             if (
               !sentence.replace(
                 /^[\s\[\(\{「［（【『〈《〔｛«‹〘〚〛〙›»〕》〉』】）］」\}\)\]]+$/g,
@@ -255,7 +247,6 @@ export default function Home() {
             const aiTalks = textsToScreenplay([aiText], koeiroParam);
             aiTextLog += aiText;
 
-            // 文ごとに音声を生成 & 再生、返答を表示
             const currentAssistantMessage = sentences.join(" ");
             handleSpeakAi(aiTalks[0], elevenLabsKey, elevenLabsParam, () => {
               setAssistantMessage(currentAssistantMessage);
@@ -269,7 +260,6 @@ export default function Home() {
         reader.releaseLock();
       }
 
-      // アシスタントの返答をログに追加
       const messageLogAssistant: Message[] = [
         ...messageLog,
         { role: "assistant", content: aiTextLog },
@@ -285,7 +275,6 @@ export default function Home() {
     setRestreamTokens(tokens);
   }, []);
 
-  // Set up global websocket handler
   useEffect(() => {
     websocketService.setLLMCallback(async (message: string): Promise<LLMCallbackResult> => {
       try {
@@ -355,6 +344,18 @@ export default function Home() {
         onChangeOpenRouterKey={handleOpenRouterKeyChange}
       />
       <GitHubLink />
+      
+      {/* Notification Container */}
+      <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
+        {notifications.map((notification) => (
+          <NotificationToast
+            key={notification.id}
+            message={notification.message}
+            type={notification.type}
+            onClose={() => removeNotification(notification.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
