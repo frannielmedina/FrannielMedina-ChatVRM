@@ -119,10 +119,15 @@ export const SettingsTabs = (props: Props) => {
             {activeTab === 'api' && <APITab {...props} />}
             {activeTab === 'ai-config' && (
               <AIConfigTab
-                {...props}
+                systemPrompt={props.systemPrompt}
                 elevenLabsKey={props.elevenLabsKey}
                 elevenLabsParam={props.elevenLabsParam}
+                chatLog={props.chatLog}
+                onChangeSystemPrompt={props.onChangeSystemPrompt}
                 onChangeElevenLabsVoice={props.onChangeElevenLabsVoice}
+                onClickResetSystemPrompt={props.onClickResetSystemPrompt}
+                onClickResetChatLog={props.onClickResetChatLog}
+                onChangeChatLog={props.onChangeChatLog}
               />
             )}
             {activeTab === 'customization' && (
