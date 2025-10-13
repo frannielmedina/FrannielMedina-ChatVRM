@@ -207,3 +207,4 @@ export const CustomizationTab = (props: Props) => {
       </div>
     </div>
   );
+}; // <--- ¡Esta llave faltaba!
