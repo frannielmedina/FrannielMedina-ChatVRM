@@ -133,7 +133,7 @@ export const CustomizationTab = (props: Props) => {
         
         <div className="flex flex-col gap-4">
           <label className="cursor-pointer">
-            <TextButton as="span">
+            <TextButton> {/* LÍNEA CORREGIDA: Eliminado 'as="span"' */}
               Seleccionar Imagen
             </TextButton>
             <input
@@ -207,4 +207,4 @@ export const CustomizationTab = (props: Props) => {
       </div>
     </div>
   );
-}; // <--- ¡Esta llave faltaba!
+}; // Cierre de la función CustomizationTab.
