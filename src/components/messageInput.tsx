@@ -2,28 +2,27 @@ import { IconButton } from "./iconButton";
 
 type Props = {
   userMessage: string;
-  isMicRecording: boolean;
   isChatProcessing: boolean;
-  onChangeUserMessage: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
-  onKeyDownUserMessage: (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  onClickSendButton: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onClickMicButton: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  isMicRecording: boolean;
+  onKeyDownUserMessage: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  onChangeUserMessage: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onClickMicButton: () => void;
+  onClickSendButton: () => void;
 };
+
 export const MessageInput = ({
   userMessage,
-  isMicRecording,
   isChatProcessing,
-  onChangeUserMessage,
+  isMicRecording,
   onKeyDownUserMessage,
+  onChangeUserMessage,
   onClickMicButton,
   onClickSendButton,
 }: Props) => {
   return (
-    <div className="absolute bottom-0 z-20 w-screen">
-      <div className="bg-base text-black">
-        <div className="mx-auto max-w-4xl p-16">
+    <div className="absolute bottom-0 z-20 w-full">
+      <div className="bg-base px-16 pb-16 pt-8">
+        <div className="mx-auto max-w-4xl">
           <div className="grid grid-flow-col gap-[8px] grid-cols-[min-content_1fr_min-content]">
             <IconButton
               iconName="24/Microphone"
@@ -34,14 +33,13 @@ export const MessageInput = ({
             />
             <input
               type="text"
-              placeholder="Message"
+              placeholder="Type a message..."
               onChange={onChangeUserMessage}
               onKeyDown={onKeyDownUserMessage}
               disabled={isChatProcessing}
-              className="bg-surface1 hover:bg-surface1-hover focus:bg-surface1 disabled:bg-surface1-disabled disabled:text-primary-disabled rounded-16 w-full px-16 text-text-primary typography-16 font-M_PLUS_2 font-bold disabled"
               value={userMessage}
+              className="bg-surface1 hover:bg-surface1-hover focus:bg-surface1 disabled:bg-surface1-disabled disabled:text-primary-disabled text-text-primary px-16 py-8 rounded-oval"
             ></input>
-
             <IconButton
               iconName="24/Send"
               className="bg-secondary hover:bg-secondary-hover active:bg-secondary-press disabled:bg-secondary-disabled"
@@ -50,18 +48,6 @@ export const MessageInput = ({
               onClick={onClickSendButton}
             />
           </div>
-        </div>
-        <div className="py-4 bg-[#413D43] text-center text-white font-Montserrat">
-          powered by&nbsp;
-          <a target="_blank" href="https://openrouter.ai/" className="underline">
-            OpenRouter
-          </a>,&nbsp;
-          <a target="_blank" href="https://beta.elevenlabs.io/" className="underline">
-            ElevenLabs
-          </a>,&nbsp;
-          <a target="_blank" href="https://vroid.com/" className="underline">
-            VRoid
-          </a>
         </div>
       </div>
     </div>
