@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { TextButton } from "../textButton";
 import { getVoices } from "@/features/elevenlabs/elevenlabs";
 import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
+import { Message } from "@/features/messages/messages";
 import { LLM_MODELS } from "@/lib/modelsList";
 import { useNotification } from "@/hooks/useNotification";
 
@@ -9,9 +10,12 @@ type Props = {
   systemPrompt: string;
   elevenLabsKey: string;
   elevenLabsParam: ElevenLabsParam;
+  chatLog: Message[];
   onChangeSystemPrompt: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onChangeElevenLabsVoice: (event: React.ChangeEvent<HTMLSelectElement>) => void;
   onClickResetSystemPrompt: () => void;
+  onClickResetChatLog: () => void;
+  onChangeChatLog: (index: number, text: string) => void;
 };
 
 export const AIConfigTab = (props: Props) => {
@@ -124,6 +128,40 @@ export const AIConfigTab = (props: Props) => {
           <li>Establece límites sobre lo que puede o no puede discutir</li>
         </ul>
       </div>
+
+      {props.chatLog.length > 0 && (
+        <div className="my-40">
+          <div className="my-8 grid-cols-2">
+            <div className="my-16 typography-20 font-bold">Historial de Conversación</div>
+            <TextButton onClick={props.onClickResetChatLog}>
+              Restablecer historial de conversación
+            </TextButton>
+          </div>
+          <div className="my-8">
+            {props.chatLog.map((value, index) => {
+              return (
+                <div
+                  key={index}
+                  className="my-8 grid grid-flow-col grid-cols-[min-content_1fr] gap-x-fixed"
+                >
+                  <div className="w-[64px] py-8">
+                    {value.role === "assistant" ? "Character" : "You"}
+                  </div>
+                  <input
+                    key={index}
+                    className="bg-surface1 hover:bg-surface1-hover rounded-8 w-full px-16 py-8"
+                    type="text"
+                    value={value.content}
+                    onChange={(event) => {
+                      props.onChangeChatLog(index, event.target.value);
+                    }}
+                  ></input>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
