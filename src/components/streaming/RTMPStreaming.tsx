@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TextButton } from "../textButton";
+import { TextButton } from "@/components/textButton";
 import { useNotification } from "@/hooks/useNotification";
 
 export const RTMPStreaming = () => {
