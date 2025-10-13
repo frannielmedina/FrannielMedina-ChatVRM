@@ -4,7 +4,7 @@ import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
 import { KoeiroParam } from "@/features/constants/koeiroParam";
 import { ChatLog } from "./chatLog";
 import React, { useCallback, useContext, useRef, useState, useEffect } from "react";
-import { Settings } from "./settings";
+import { SettingsTabs } from "./SettingsTabs";
 import { ViewerContext } from "@/features/vrmViewer/viewerContext";
 import { AssistantText } from "./assistantText";
 
@@ -31,6 +31,7 @@ type Props = {
   onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
   openRouterKey: string;
 };
+
 export const Menu = ({
   openAiKey,
   elevenLabsKey,
@@ -165,7 +166,7 @@ export const Menu = ({
       </div>
       {showChatLog && <ChatLog messages={chatLog} />}
       {showSettings && (
-        <Settings
+        <SettingsTabs
           openAiKey={openAiKey}
           elevenLabsKey={elevenLabsKey}
           openRouterKey={openRouterKey}
