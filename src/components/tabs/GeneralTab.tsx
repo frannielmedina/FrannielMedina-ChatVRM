@@ -119,9 +119,9 @@ export const GeneralTab = (props: Props) => {
           </TextButton>
           
           <label className="cursor-pointer">
-            <TextButton as="span">
+            <div className="px-24 py-8 text-white font-bold bg-primary hover:bg-primary-hover active:bg-primary-press disabled:bg-primary-disabled rounded-oval cursor-pointer inline-block">
               Cargar Datos (Importar)
-            </TextButton>
+            </div>
             <input
               type="file"
               accept=".json"
