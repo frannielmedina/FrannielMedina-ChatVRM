@@ -34,17 +34,21 @@ export const NotificationToast = ({ message, type, onClose, duration = 3000 }: P
   };
 
   const getStyles = () => {
+    const uiColor = typeof window !== 'undefined' 
+      ? localStorage.getItem('uiColor') || '#856292' 
+      : '#856292';
+    
     const baseStyles = "flex items-start gap-3 p-4 rounded-lg shadow-lg min-w-[300px] max-w-md";
     
     switch (type) {
       case 'success':
-        return `${baseStyles} bg-green-500 text-white`;
+        return `${baseStyles} bg-green-600 text-white`;
       case 'error':
-        return `${baseStyles} bg-red-500 text-white`;
+        return `${baseStyles} bg-red-600 text-white`;
       case 'info':
-        return `${baseStyles} bg-blue-500 text-white`;
+        return `${baseStyles} text-white`;
       case 'warning':
-        return `${baseStyles} bg-yellow-500 text-white`;
+        return `${baseStyles} bg-yellow-600 text-white`;
       default:
         return `${baseStyles} bg-gray-700 text-white`;
     }
@@ -73,7 +77,17 @@ export const NotificationToast = ({ message, type, onClose, duration = 3000 }: P
           : 'translate-x-full opacity-0'
       }`}
     >
-      <div className={getStyles()}>
+      <div 
+        className={getStyles()}
+        style={
+          type === 'info' 
+            ? { backgroundColor: typeof window !== 'undefined' 
+                ? localStorage.getItem('uiColor') || '#856292' 
+                : '#856292' 
+              } 
+            : {}
+        }
+      >
         <div className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center font-bold">
           {getIcon()}
         </div>
