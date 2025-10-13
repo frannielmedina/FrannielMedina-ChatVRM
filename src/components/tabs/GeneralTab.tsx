@@ -12,9 +12,9 @@ export const GeneralTab = (props: Props) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [characterName, setCharacterName] = useState(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('characterName') || 'Personaje';
+      return localStorage.getItem('characterName') || 'Character';
     }
-    return 'Personaje';
+    return 'Character';
   });
   const { showNotification } = useNotification();
 
