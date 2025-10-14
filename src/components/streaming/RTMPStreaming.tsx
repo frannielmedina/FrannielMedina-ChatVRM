@@ -211,7 +211,7 @@ export const RTMPStreaming = () => {
           </li>
           <li className="flex items-start gap-2">
             <span className="font-bold">•</span>
-            <span><strong>Prueba local:</strong> Usa "Iniciar grabación" en OBS antes de tu primera transmisión en vivo</span>
+            <span><strong>Prueba local:</strong> Usa &quot;Iniciar grabación&quot; en OBS antes de tu primera transmisión en vivo</span>
           </li>
         </ul>
       </div>
