@@ -279,7 +279,7 @@ export default function Home() {
       setChatLog(messageLogAssistant);
       setChatProcessing(false);
     },
-    [systemPrompt, chatLog, handleSpeakAi, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey]
+    [systemPrompt, chatLog, handleSpeakAi, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey, koeiroParam]
   );
 
   const handleTokensUpdate = useCallback((tokens: any) => {
@@ -320,65 +320,40 @@ export default function Home() {
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
       <Meta />
-      
-      {isLoading && (
-        <LoadingScreen onLoadComplete={() => setIsLoading(false)} />
-      )}
-      
-      {!isLoading && (
-        <>
-          <Introduction
-            openAiKey={openAiKey}
-            onChangeAiKey={setOpenAiKey}
-            elevenLabsKey={elevenLabsKey}
-            onChangeElevenLabsKey={setElevenLabsKey}
-          />
-          <VrmViewer />
-          <MessageInputContainer
-            isChatProcessing={chatProcessing}
-            onChatProcessStart={handleSendChat}
-          />
-          <Menu
-            openAiKey={openAiKey}
-            elevenLabsKey={elevenLabsKey}
-            openRouterKey={openRouterKey}
-            systemPrompt={systemPrompt}
-            chatLog={chatLog}
-            elevenLabsParam={elevenLabsParam}
-            koeiroParam={koeiroParam}
-            assistantMessage={assistantMessage}
-            onChangeAiKey={setOpenAiKey}
-            onChangeElevenLabsKey={setElevenLabsKey}
-            onChangeSystemPrompt={setSystemPrompt}
-            onChangeChatLog={handleChangeChatLog}
-            onChangeElevenLabsParam={setElevenLabsParam}
-            onChangeKoeiromapParam={setKoeiroParam}
-            handleClickResetChatLog={() => setChatLog([])}
-            handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
-            backgroundImage={backgroundImage}
-            onChangeBackgroundImage={setBackgroundImage}
-            onTokensUpdate={handleTokensUpdate}
-            onChatMessage={handleSendChat}
-            onChangeOpenRouterKey={handleOpenRouterKeyChange}
-          />
-          <GitHubLink />
-        </>
-      )}
-      
-      {/* Notification Container */}
-      <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
-        {notifications.map((notification) => (
-          <NotificationToast
-            key={notification.id}
-            message={notification.message}
-            type={notification.type}
-            onClose={() => removeNotification(notification.id)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+      <Introduction
+        openAiKey={openAiKey}
+        onChangeAiKey={setOpenAiKey}
+        elevenLabsKey={elevenLabsKey}
+        onChangeElevenLabsKey={setElevenLabsKey}
+      />
+      <VrmViewer />
+      <MessageInputContainer
+        isChatProcessing={chatProcessing}
+        onChatProcessStart={handleSendChat}
+      />
+      <Menu
+        openAiKey={openAiKey}
+        elevenLabsKey={elevenLabsKey}
+        openRouterKey={openRouterKey}
+        systemPrompt={systemPrompt}
+        chatLog={chatLog}
+        elevenLabsParam={elevenLabsParam}
+        koeiroParam={koeiroParam}
+        assistantMessage={assistantMessage}
+        onChangeAiKey={setOpenAiKey}
+        onChangeElevenLabsKey={setElevenLabsKey}
+        onChangeSystemPrompt={setSystemPrompt}
+        onChangeChatLog={handleChangeChatLog}
+        onChangeElevenLabsParam={setElevenLabsParam}
+        onChangeKoeiromapParam={setKoeiroParam}
+        handleClickResetChatLog={() => setChatLog([])}
+        handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
+        backgroundImage={backgroundImage}
+        onChangeBackgroundImage={setBackgroundImage}
+        onTokensUpdate={handleTokensUpdate}
+        onChatMessage={handleSendChat}
+        onChangeOpenRouterKey={handleOpenRouterKeyChange}
+      />
       <GitHubLink />
       
       {/* Notification Container */}
