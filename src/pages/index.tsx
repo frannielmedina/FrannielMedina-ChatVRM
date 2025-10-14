@@ -22,6 +22,7 @@ import { websocketService } from '../services/websocketService';
 import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
 import { NotificationToast } from "@/components/NotificationToast";
 import { useNotificationContainer } from "@/hooks/useNotification";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const m_plus_2 = M_PLUS_2({
   variable: "--font-m-plus-2",
@@ -43,6 +44,7 @@ type LLMCallbackResult = {
 export default function Home() {
   const { viewer } = useContext(ViewerContext);
   const { notifications, removeNotification } = useNotificationContainer();
+  const [isLoading, setIsLoading] = useState(true);
 
   const [systemPrompt, setSystemPrompt] = useState(SYSTEM_PROMPT);
   const [openAiKey, setOpenAiKey] = useState("");
@@ -309,40 +311,65 @@ export default function Home() {
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
       <Meta />
-      <Introduction
-        openAiKey={openAiKey}
-        onChangeAiKey={setOpenAiKey}
-        elevenLabsKey={elevenLabsKey}
-        onChangeElevenLabsKey={setElevenLabsKey}
-      />
-      <VrmViewer />
-      <MessageInputContainer
-        isChatProcessing={chatProcessing}
-        onChatProcessStart={handleSendChat}
-      />
-      <Menu
-        openAiKey={openAiKey}
-        elevenLabsKey={elevenLabsKey}
-        openRouterKey={openRouterKey}
-        systemPrompt={systemPrompt}
-        chatLog={chatLog}
-        elevenLabsParam={elevenLabsParam}
-        koeiroParam={koeiroParam}
-        assistantMessage={assistantMessage}
-        onChangeAiKey={setOpenAiKey}
-        onChangeElevenLabsKey={setElevenLabsKey}
-        onChangeSystemPrompt={setSystemPrompt}
-        onChangeChatLog={handleChangeChatLog}
-        onChangeElevenLabsParam={setElevenLabsParam}
-        onChangeKoeiromapParam={setKoeiroParam}
-        handleClickResetChatLog={() => setChatLog([])}
-        handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
-        backgroundImage={backgroundImage}
-        onChangeBackgroundImage={setBackgroundImage}
-        onTokensUpdate={handleTokensUpdate}
-        onChatMessage={handleSendChat}
-        onChangeOpenRouterKey={handleOpenRouterKeyChange}
-      />
+      
+      {isLoading && (
+        <LoadingScreen onLoadComplete={() => setIsLoading(false)} />
+      )}
+      
+      {!isLoading && (
+        <>
+          <Introduction
+            openAiKey={openAiKey}
+            onChangeAiKey={setOpenAiKey}
+            elevenLabsKey={elevenLabsKey}
+            onChangeElevenLabsKey={setElevenLabsKey}
+          />
+          <VrmViewer />
+          <MessageInputContainer
+            isChatProcessing={chatProcessing}
+            onChatProcessStart={handleSendChat}
+          />
+          <Menu
+            openAiKey={openAiKey}
+            elevenLabsKey={elevenLabsKey}
+            openRouterKey={openRouterKey}
+            systemPrompt={systemPrompt}
+            chatLog={chatLog}
+            elevenLabsParam={elevenLabsParam}
+            koeiroParam={koeiroParam}
+            assistantMessage={assistantMessage}
+            onChangeAiKey={setOpenAiKey}
+            onChangeElevenLabsKey={setElevenLabsKey}
+            onChangeSystemPrompt={setSystemPrompt}
+            onChangeChatLog={handleChangeChatLog}
+            onChangeElevenLabsParam={setElevenLabsParam}
+            onChangeKoeiromapParam={setKoeiroParam}
+            handleClickResetChatLog={() => setChatLog([])}
+            handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
+            backgroundImage={backgroundImage}
+            onChangeBackgroundImage={setBackgroundImage}
+            onTokensUpdate={handleTokensUpdate}
+            onChatMessage={handleSendChat}
+            onChangeOpenRouterKey={handleOpenRouterKeyChange}
+          />
+          <GitHubLink />
+        </>
+      )}
+      
+      {/* Notification Container */}
+      <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
+        {notifications.map((notification) => (
+          <NotificationToast
+            key={notification.id}
+            message={notification.message}
+            type={notification.type}
+            onClose={() => removeNotification(notification.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
       <GitHubLink />
       
       {/* Notification Container */}
