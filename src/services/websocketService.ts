@@ -6,16 +6,13 @@ interface ChatMessage {
     timestamp: number;
     text: string;
     avatar: string;
-    eventTypeId: number;  // 24 for X, 4 for Twitch
+    eventTypeId: number;
 }
 
-type LLMCallback = (message: string) => Promise<{
+type LLMCallback = (message: string, username?: string, isFromStream?: boolean) => Promise<{
     processed: boolean;
     error?: string;
 }>;
-
-// TODO: Add middle out. Even though OpenRouter uses middle out, we should do it on our side
-// to prevent the requests to OpenRouter from being too large.
 
 export class WebSocketService extends EventEmitter {
     private ws: WebSocket | null = null;
@@ -24,17 +21,15 @@ export class WebSocketService extends EventEmitter {
     private reconnectionPromise: Promise<void> | null = null;
     private isReconnecting: boolean = false;
     
-    // New state management properties
     private messageQueue: ChatMessage[] = [];
     private isProcessing: boolean = false;
     private batchTimeout: NodeJS.Timeout | null = null;
-    private readonly BATCH_DELAY = 1000; // Wait 1 second to batch messages
+    private readonly BATCH_DELAY = 1000;
     
     constructor() {
         super();
     }
 
-    // Updated to handle async callback
     setLLMCallback(callback: LLMCallback) {
         this.llmCallback = callback;
     }
@@ -61,7 +56,6 @@ export class WebSocketService extends EventEmitter {
     };
 
     private handleWebSocketClose = () => {
-        // Only emit connection change if we're not in the middle of reconnecting
         if (!this.isReconnecting) {
             this.emit('connectionChange', false);
         }
@@ -91,7 +85,6 @@ export class WebSocketService extends EventEmitter {
             this.ws.close();
             this.ws = null;
         }
-        // Clear the interval when disconnecting
         if (this.batchTimeout) {
             clearInterval(this.batchTimeout);
             this.batchTimeout = null;
@@ -122,7 +115,6 @@ export class WebSocketService extends EventEmitter {
     private queueMessage(message: ChatMessage) {
         this.messageQueue.push(message);
         
-        // Only start the interval if it's not already running
         if (!this.batchTimeout) {
             this.batchTimeout = setInterval(() => {
                 this.processMessageQueue();
@@ -131,16 +123,13 @@ export class WebSocketService extends EventEmitter {
     }
 
     private async processMessageQueue() {
-        // If already processing or no messages, return
         if (this.isProcessing || this.messageQueue.length === 0 || !this.llmCallback) {
             return;
         }
 
         this.isProcessing = true;
         
-        // Take a snapshot of current messages to process, leaving the queue open for new messages
         const messagesToProcess = [...this.messageQueue];
-        // Clear only the messages we're about to process
         this.messageQueue = this.messageQueue.slice(messagesToProcess.length);
 
         try {
@@ -152,15 +141,14 @@ export class WebSocketService extends EventEmitter {
             
             const prompt = `Received these messages from your livestream, please respond:\n${formattedMessages}`;
             
-            const result = await this.llmCallback(prompt);
+            // Pass username and flag indicating this is from stream
+            const result = await this.llmCallback(prompt, messagesToProcess[0].displayName, true);
             if (!result.processed) {
                 console.log(`Message processing skipped: ${result.error}`);
-                // Add failed messages back to the front of the queue
                 this.messageQueue = [...messagesToProcess, ...this.messageQueue];
             }
         } catch (error) {
             console.error('Error processing message queue:', error);
-            // Add failed messages back to the front of the queue
             this.messageQueue = [...messagesToProcess, ...this.messageQueue];
         } finally {
             this.isProcessing = false;
@@ -168,16 +156,13 @@ export class WebSocketService extends EventEmitter {
     }
 
     async reconnectWithNewToken(newToken: string) {
-        // If there's an ongoing reconnection, wait for it to finish
         if (this.reconnectionPromise) {
             await this.reconnectionPromise;
-            // If the tokens match after waiting, we don't need to reconnect again
             if (this.currentToken === newToken) {
                 return;
             }
         }
 
-        // Create new reconnection promise
         this.reconnectionPromise = (async () => {
             console.log('Reconnecting with new token');
             this.isReconnecting = true;
@@ -198,11 +183,7 @@ export class WebSocketService extends EventEmitter {
 
                 if (this.ws) {
                     console.log('Closing old connection');
-
-                    // clear event handlers for close on old connection
-                    // this prevents connectionChange from being emitted
                     this.ws.onclose = null;
-                    
                     this.ws.close();
                 }
 
@@ -217,9 +198,8 @@ export class WebSocketService extends EventEmitter {
             }
         })();
 
-        // Wait for the reconnection to complete
         await this.reconnectionPromise;
     }
 }
 
-export const websocketService = new WebSocketService(); 
+export const websocketService = new WebSocketService();
