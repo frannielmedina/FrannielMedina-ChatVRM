@@ -132,10 +132,10 @@ export const CustomizationTab = (props: Props) => {
         </div>
         
         <div className="flex flex-col gap-4">
-          <label className="cursor-pointer">
-            <TextButton> {/* LÍNEA CORREGIDA: Eliminado 'as="span"' */}
+          <label className="cursor-pointer inline-block">
+            <div className="px-24 py-8 text-white font-bold bg-primary hover:bg-primary-hover active:bg-primary-press disabled:bg-primary-disabled rounded-oval cursor-pointer inline-block transition-colors">
               Seleccionar Imagen
-            </TextButton>
+            </div>
             <input
               type="file"
               accept="image/*"
@@ -143,6 +143,24 @@ export const CustomizationTab = (props: Props) => {
               className="hidden"
             />
           </label>
+
+          {props.backgroundImage && (
+            <div className="flex flex-col gap-4">
+              <div className="my-8">
+                <img
+                  src={props.backgroundImage}
+                  alt="Vista previa del fondo"
+                  className="max-w-[300px] rounded-8 border-2 border-gray-300"
+                />
+              </div>
+              <div>
+                <TextButton onClick={handleRemoveBackground}>
+                  Remover Fondo
+                </TextButton>
+              </div>
+            </div>
+          )}
+        </div>
 
           {props.backgroundImage && (
             <div className="flex flex-col gap-4">
@@ -207,4 +225,3 @@ export const CustomizationTab = (props: Props) => {
       </div>
     </div>
   );
-}; // Cierre de la función CustomizationTab.
