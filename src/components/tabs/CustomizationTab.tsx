@@ -161,25 +161,7 @@ export const CustomizationTab = (props: Props) => {
             </div>
           )}
         </div>
-
-          {props.backgroundImage && (
-            <div className="flex flex-col gap-4">
-              <div className="my-8">
-                <img
-                  src={props.backgroundImage}
-                  alt="Vista previa del fondo"
-                  className="max-w-[300px] rounded-8 border-2 border-gray-300"
-                />
-              </div>
-              <div>
-                <TextButton onClick={handleRemoveBackground}>
-                  Remover Fondo
-                </TextButton>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      </div> {/* <--- Se eliminó el cierre de div duplicado aquí */}
 
       <div className="my-24">
         <div className="my-16 typography-20 font-bold">Modelo del Personaje VRM</div>
@@ -225,3 +207,4 @@ export const CustomizationTab = (props: Props) => {
       </div>
     </div>
   );
+};
