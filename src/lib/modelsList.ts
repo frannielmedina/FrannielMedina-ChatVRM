@@ -13,49 +13,49 @@ export const LLM_MODELS: LLMModel[] = [
     description: 'Modelo experimental rápido de Google (Preestablecido)'
   },
   {
-    id: 'google/gemma-2-9b-it:free',
-    name: 'Gemma 3 4B',
+    id: 'google/gemma-3-27b-it:free',
+    name: 'Gemma 3 27B',
     free: true,
     description: 'Modelo compacto y eficiente de Google'
   },
   {
-    id: 'deepseek/deepseek-chat:free',
+    id: 'deepseek/deepseek-chat-v3.1:free',
     name: 'Deepseek 3.1',
     free: true,
     description: 'Modelo conversacional de Deepseek'
   },
   {
-    id: 'deepseek/deepseek-r1-distill-llama-70b:free',
+    id: 'deepseek/deepseek-chat-v3-0324:free',
     name: 'Deepseek V3 0324',
     free: true,
     description: 'Versión mejorada de Deepseek'
   },
   {
-    id: 'deepseek/deepseek-r1:free',
-    name: 'Deepseek R1T2',
+    id: 'tngtech/deepseek-r1t2-chimera:free',
+    name: 'Deepseek Chimera R1T2',
     free: true,
     description: 'Modelo de razonamiento R1T2'
   },
   {
-    id: 'deepseek/deepseek-r1-distill-qwen-32b:free',
-    name: 'Deepseek R1T',
+    id: 'tngtech/deepseek-r1t-chimera:free',
+    name: 'Deepseek Chimera R1T',
     free: true,
     description: 'Modelo de razonamiento R1T'
   },
   {
-    id: 'qwen/qwen-2.5-7b-instruct:free',
+    id: 'qwen/qwen3-8b:free',
     name: 'Qwen3 8B',
     free: true,
     description: 'Modelo de instrucciones Qwen 8B'
   },
   {
-    id: 'qwen/qwen-2.5-14b-instruct:free',
+    id: 'qwen/qwen3-14b:free',
     name: 'Qwen3 14B',
     free: true,
     description: 'Modelo de instrucciones Qwen 14B'
   },
   {
-    id: 'meta-llama/llama-3.3-70b-instruct:free',
+    id: 'meta-llama/llama-4-maverick:free',
     name: 'Llama 4 Maverick',
     free: true,
     description: 'Modelo Llama 4 experimental'
@@ -67,7 +67,7 @@ export const LLM_MODELS: LLMModel[] = [
     description: 'Modelo compacto Llama 3.2'
   },
   {
-    id: 'mistralai/mistral-small:free',
+    id: 'mistralai/mistral-small-3.2-24b-instruct:free',
     name: 'Mistral Small 3.2 24B',
     free: true,
     description: 'Modelo compacto de Mistral AI'
@@ -79,7 +79,7 @@ export const LLM_MODELS: LLMModel[] = [
     description: 'Modelo Nemo de Mistral AI'
   },
   {
-    id: 'moonshot/moonshot-v1-8k:free',
+    id: 'moonshotai/kimi-k2:free',
     name: 'Kimi K2 0711',
     free: true,
     description: 'Modelo Moonshot/Kimi'
