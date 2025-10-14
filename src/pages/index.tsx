@@ -160,14 +160,23 @@ export default function Home() {
   );
 
   const handleSendChat = useCallback(
-    async (text: string) => {
+    async (text: string, username?: string, isFromStream?: boolean) => {
       const newMessage = text;
       if (newMessage == null) return;
 
       setChatProcessing(true);
+      
+      // Determinar el rol basado en si viene del stream
+      const messageRole = isFromStream ? "user" : "user";
+      
+      // Formatear el contenido del mensaje
+      const messageContent = isFromStream && username 
+        ? `${username}: ${newMessage}` 
+        : newMessage;
+      
       const messageLog: Message[] = [
         ...chatLog,
-        { role: "user", content: newMessage },
+        { role: messageRole, content: messageContent },
       ];
       setChatLog(messageLog);
 
@@ -278,7 +287,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    websocketService.setLLMCallback(async (message: string): Promise<LLMCallbackResult> => {
+    websocketService.setLLMCallback(async (message: string, username?: string, isFromStream?: boolean): Promise<LLMCallbackResult> => {
       try {
         if (isAISpeaking || isPlayingAudio || chatProcessing) {
           console.log('Skipping message processing - system busy');
@@ -288,7 +297,7 @@ export default function Home() {
           };
         }
         
-        await handleSendChat(message);
+        await handleSendChat(message, username, isFromStream);
         return {
           processed: true
         };
