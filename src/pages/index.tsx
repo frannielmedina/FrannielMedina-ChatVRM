@@ -166,19 +166,120 @@ export default function Home() {
 
       setChatProcessing(true);
       
-      // Determinar el rol basado en si viene del stream
-      const messageRole = isFromStream ? "user" : "user";
-      
-      // Formatear el contenido del mensaje
+      // Formatear el contenido del mensaje para el log
       const messageContent = isFromStream && username 
         ? `${username}: ${newMessage}` 
         : newMessage;
       
+      // Agregar mensaje al log ANTES de procesar
       const messageLog: Message[] = [
         ...chatLog,
-        { role: messageRole, content: messageContent },
+        { role: "user", content: messageContent },
       ];
       setChatLog(messageLog);
+
+      const messageProcessor = new MessageMiddleOut();
+      const processedMessages = messageProcessor.process([
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        ...messageLog,
+      ]);
+
+      let localOpenRouterKey = openRouterKey;
+      if (!localOpenRouterKey) {
+        localOpenRouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY!;
+      }
+
+      // Get selected model
+      const selectedModel = localStorage.getItem('selectedLLMModel') || 'google/gemini-2.0-flash-exp:free';
+
+      const stream = await getChatResponseStream(
+        processedMessages, 
+        openAiKey, 
+        localOpenRouterKey,
+        selectedModel
+      ).catch((e) => {
+        console.error(e);
+        return null;
+      });
+      
+      if (stream == null) {
+        setChatProcessing(false);
+        return;
+      }
+
+      const reader = stream.getReader();
+      let receivedMessage = "";
+      let aiTextLog = "";
+      let tag = "";
+      const sentences = new Array<string>();
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          receivedMessage += value;
+
+          const tagMatch = receivedMessage.match(/^\[(.*?)\]/);
+          if (tagMatch && tagMatch[0]) {
+            tag = tagMatch[0];
+            receivedMessage = receivedMessage.slice(tag.length);
+            console.log('tag:', tag);
+          }
+
+          const sentenceMatch = receivedMessage.match(
+            /^(.+[。．！？\n.!?]|.{10,}[、,])/
+          );
+          
+          if (sentenceMatch && sentenceMatch[0]) {
+            const sentence = sentenceMatch[0];
+            sentences.push(sentence);
+            console.log('sentence:', sentence);
+
+            receivedMessage = receivedMessage
+              .slice(sentence.length)
+              .trimStart();
+
+            if (
+              !sentence.replace(
+                /^[\s\[\(\{「［（【『〈《〔｛«‹〘〚〛〙›»〕》〉』】）］」\}\)\]]+$/g,
+                ""
+              )
+            ) {
+              continue;
+            }
+
+            const aiText = `${tag} ${sentence}`;
+            const aiTalks = textsToScreenplay([aiText], koeiroParam);
+            aiTextLog += aiText;
+
+            const currentAssistantMessage = sentences.join(" ");
+            handleSpeakAi(aiTalks[0], elevenLabsKey, elevenLabsParam, () => {
+              setAssistantMessage(currentAssistantMessage);
+            });
+          }
+        }
+      } catch (e) {
+        setChatProcessing(false);
+        console.error(e);
+      } finally {
+        reader.releaseLock();
+      }
+
+      // Agregar respuesta del asistente al log
+      const messageLogAssistant: Message[] = [
+        ...messageLog,
+        { role: "assistant", content: aiTextLog },
+      ];
+
+      setChatLog(messageLogAssistant);
+      setChatProcessing(false);
+    },
+    [systemPrompt, chatLog, handleSpeakAi, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey, koeiroParam]
+  );
 
       const messageProcessor = new MessageMiddleOut();
       const processedMessages = messageProcessor.process([
