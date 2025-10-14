@@ -90,7 +90,7 @@ export const RTMPStreaming = () => {
             <div className="text-sm text-blue-800 space-y-1">
               <div>1. Abre OBS Studio</div>
               <div>2. En <strong>Fuentes</strong>, haz clic en el botón <strong>+</strong></div>
-              <div>3. Selecciona <strong>"Captura de ventana"</strong></div>
+              <div>3. Selecciona <strong>&quot;Captura de ventana&quot;</strong></div>
               <div>4. Elige la ventana del navegador con ChatVRM</div>
             </div>
           </div>
@@ -101,7 +101,7 @@ export const RTMPStreaming = () => {
               <div>1. Haz clic derecho en la fuente capturada</div>
               <div>2. Selecciona <strong>Filtros</strong></div>
               <div>3. En <strong>Filtros de efectos</strong>, haz clic en <strong>+</strong></div>
-              <div>4. Selecciona <strong>"Croma / Chroma Key"</strong></div>
+              <div>4. Selecciona <strong>&quot;Croma / Chroma Key&quot;</strong></div>
               <div>5. Ajusta la configuración (el verde debería eliminarse automáticamente)</div>
             </div>
           </div>
@@ -110,9 +110,9 @@ export const RTMPStreaming = () => {
             <div className="font-bold text-blue-900 mb-2">Paso 5: Configura tu transmisión</div>
             <div className="text-sm text-blue-800 space-y-1">
               <div>1. Ve a <strong>Configuración → Emisión</strong> en OBS</div>
-              <div>2. Selecciona tu plataforma o elige <strong>"Personalizado"</strong></div>
+              <div>2. Selecciona tu plataforma o elige <strong>&quot;Personalizado&quot;</strong></div>
               <div>3. Ingresa la URL del servidor RTMP y tu clave de transmisión</div>
-              <div>4. Haz clic en <strong>"Iniciar transmisión"</strong></div>
+              <div>4. Haz clic en <strong>&quot;Iniciar transmisión&quot;</strong></div>
             </div>
           </div>
         </div>
