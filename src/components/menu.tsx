@@ -57,8 +57,21 @@ export const Menu = ({
 }: Props) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showChatLog, setShowChatLog] = useState(false);
+  const [isOpening, setIsOpening] = useState(false);
   const { viewer } = useContext(ViewerContext);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOpenSettings = () => {
+    setIsOpening(true);
+    setTimeout(() => {
+      setShowSettings(true);
+    }, 50);
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettings(false);
+    setIsOpening(false);
+  };
 
   useEffect(() => {
     const savedBackground = localStorage.getItem('backgroundImage');
@@ -140,30 +153,55 @@ export const Menu = ({
     <>
       <div className="absolute z-10 m-24">
         <div className="grid grid-flow-col gap-[8px]">
-          <IconButton
-            iconName="24/Menu"
-            label="Settings"
-            isProcessing={false}
-            onClick={() => setShowSettings(true)}
-          ></IconButton>
-          {showChatLog ? (
+          <div 
+            style={{
+              animation: 'slideInLeft 0.3s ease-out'
+            }}
+          >
             <IconButton
-              iconName="24/CommentOutline"
-              label="Conversation Log"
+              iconName="24/Menu"
+              label="Settings"
               isProcessing={false}
-              onClick={() => setShowChatLog(false)}
+              onClick={handleOpenSettings}
             />
-          ) : (
-            <IconButton
-              iconName="24/CommentFill"
-              label="Conversation Log"
-              isProcessing={false}
-              disabled={chatLog.length <= 0}
-              onClick={() => setShowChatLog(true)}
-            />
-          )}
+          </div>
+          <div
+            style={{
+              animation: 'slideInLeft 0.4s ease-out'
+            }}
+          >
+            {showChatLog ? (
+              <IconButton
+                iconName="24/CommentOutline"
+                label="Conversation Log"
+                isProcessing={false}
+                onClick={() => setShowChatLog(false)}
+              />
+            ) : (
+              <IconButton
+                iconName="24/CommentFill"
+                label="Conversation Log"
+                isProcessing={false}
+                disabled={chatLog.length <= 0}
+                onClick={() => setShowChatLog(true)}
+              />
+            )}
+          </div>
         </div>
       </div>
+      
+      <style jsx>{`
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+      `}</style>
       {showChatLog && <ChatLog messages={chatLog} />}
       {showSettings && (
         <SettingsTabs
@@ -174,7 +212,7 @@ export const Menu = ({
           chatLog={chatLog}
           systemPrompt={systemPrompt}
           koeiroParam={koeiroParam}
-          onClickClose={() => setShowSettings(false)}
+          onClickClose={handleCloseSettings}
           onChangeAiKey={handleAiKeyChange}
           onChangeElevenLabsKey={handleElevenLabsKeyChange}
           onChangeElevenLabsVoice={handleElevenLabsVoiceChange}
