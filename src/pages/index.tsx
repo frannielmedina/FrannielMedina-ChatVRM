@@ -49,7 +49,15 @@ export default function Home() {
   const [systemPrompt, setSystemPrompt] = useState(SYSTEM_PROMPT);
   const [openAiKey, setOpenAiKey] = useState("");
   const [elevenLabsKey, setElevenLabsKey] = useState("");
-  const [elevenLabsParam, setElevenLabsParam] = useState<ElevenLabsParam>(DEFAULT_ELEVEN_LABS_PARAM);
+  const [elevenLabsParam, setElevenLabsParam] = useState<ElevenLabsParam>(() => {
+    if (typeof window !== 'undefined') {
+      const savedVoiceId = localStorage.getItem('elevenLabsVoiceId');
+      if (savedVoiceId) {
+        return { voiceId: savedVoiceId };
+      }
+    }
+    return DEFAULT_ELEVEN_LABS_PARAM;
+  });
   const [koeiroParam, setKoeiroParam] = useState<KoeiroParam>(DEFAULT_KOEIRO_PARAM);
   const [chatProcessing, setChatProcessing] = useState(false);
   const [chatLog, setChatLog] = useState<Message[]>([]);
@@ -79,7 +87,9 @@ export default function Home() {
         window.localStorage.getItem("chatVRMParams") as string
       );
       setSystemPrompt(params.systemPrompt);
-      setElevenLabsParam(params.elevenLabsParam);
+      if (params.elevenLabsParam) {
+        setElevenLabsParam(params.elevenLabsParam);
+      }
       setChatLog(params.chatLog);
     }
     if (window.localStorage.getItem("elevenLabsKey")) {
@@ -103,8 +113,10 @@ export default function Home() {
         JSON.stringify({ systemPrompt, elevenLabsParam, chatLog })
       );
       window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
+      // Guardar voiceId por separado también
+      window.localStorage.setItem("elevenLabsVoiceId", elevenLabsParam.voiceId);
     });
-  }, [systemPrompt, elevenLabsParam, chatLog]);
+  }, [systemPrompt, elevenLabsParam, chatLog, elevenLabsKey]);
 
   useEffect(() => {
     if (backgroundImage) {
@@ -160,7 +172,6 @@ export default function Home() {
       const newMessage = text;
       if (newMessage == null) return;
 
-      // Prevenir procesamiento múltiple simultáneo
       if (chatProcessing) {
         console.log('Chat already processing, skipping message');
         return;
@@ -168,19 +179,16 @@ export default function Home() {
 
       setChatProcessing(true);
       
-      // Formatear el contenido del mensaje para el log
       const messageContent = isFromStream && username 
         ? `${username}: ${newMessage}` 
         : newMessage;
       
-      // CRÍTICO: Usar la función de actualización de estado para obtener el chatLog más reciente
       setChatLog((prevChatLog) => {
         const messageLog: Message[] = [
           ...prevChatLog,
           { role: "user", content: messageContent },
         ];
         
-        // Procesar el mensaje con el historial actualizado de forma asíncrona
         processMessage(messageLog);
         
         return messageLog;
@@ -189,7 +197,6 @@ export default function Home() {
     [systemPrompt, openAiKey, openRouterKey, koeiroParam, chatProcessing]
   );
 
-  // Nueva función auxiliar para procesar el mensaje
   const processMessage = async (messageLog: Message[]) => {
     const messageProcessor = new MessageMiddleOut();
     const processedMessages = messageProcessor.process([
@@ -205,7 +212,6 @@ export default function Home() {
       localOpenRouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY!;
     }
 
-    // Get selected model
     const selectedModel = localStorage.getItem('selectedLLMModel') || 'google/gemini-2.0-flash-exp:free';
 
     const stream = await getChatResponseStream(
@@ -241,7 +247,6 @@ export default function Home() {
         if (tagMatch && tagMatch[0]) {
           tag = tagMatch[0];
           receivedMessage = receivedMessage.slice(tag.length);
-          console.log('tag:', tag);
         }
 
         const sentenceMatch = receivedMessage.match(
@@ -251,7 +256,6 @@ export default function Home() {
         if (sentenceMatch && sentenceMatch[0]) {
           const sentence = sentenceMatch[0];
           sentences.push(sentence);
-          console.log('sentence:', sentence);
 
           receivedMessage = receivedMessage
             .slice(sentence.length)
@@ -284,7 +288,6 @@ export default function Home() {
       reader.releaseLock();
     }
 
-    // Agregar respuesta del asistente al log usando función de actualización
     setChatLog((prevLog) => [
       ...prevLog,
       { role: "assistant", content: aiTextLog },
@@ -328,6 +331,12 @@ export default function Home() {
     localStorage.setItem('openRouterKey', newKey);
   };
 
+  // NUEVO: Handler para cambio de ElevenLabsParam
+  const handleElevenLabsParamChange = useCallback((param: ElevenLabsParam) => {
+    setElevenLabsParam(param);
+    localStorage.setItem('elevenLabsVoiceId', param.voiceId);
+  }, []);
+
   return (
     <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
       <Meta />
@@ -362,7 +371,7 @@ export default function Home() {
             onChangeElevenLabsKey={setElevenLabsKey}
             onChangeSystemPrompt={setSystemPrompt}
             onChangeChatLog={handleChangeChatLog}
-            onChangeElevenLabsParam={setElevenLabsParam}
+            onChangeElevenLabsParam={handleElevenLabsParamChange}
             onChangeKoeiromapParam={setKoeiroParam}
             handleClickResetChatLog={() => setChatLog([])}
             handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
@@ -376,7 +385,6 @@ export default function Home() {
         </>
       )}
       
-      {/* Notification Container */}
       <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
         {notifications.map((notification) => (
           <NotificationToast
