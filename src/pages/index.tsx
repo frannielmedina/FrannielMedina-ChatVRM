@@ -1,244 +1,498 @@
-import { IconButton } from "./iconButton";
-import { Message } from "@/features/messages/messages";
-import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
-import { KoeiroParam } from "@/features/constants/koeiroParam";
-import { ChatLog } from "./chatLog";
-import React, { useCallback, useContext, useRef, useState, useEffect } from "react";
-import { SettingsTabs } from "./SettingsTabs";
+import { useCallback, useContext, useEffect, useState } from "react";
+import VrmViewer from "@/components/vrmViewer";
 import { ViewerContext } from "@/features/vrmViewer/viewerContext";
-import { AssistantText } from "./assistantText";
+import {
+  Message,
+  textsToScreenplay,
+  Screenplay,
+} from "@/features/messages/messages";
+import { speakCharacter } from "@/features/messages/speakCharacter";
+import { MessageInputContainer } from "@/components/messageInputContainer";
+import { SYSTEM_PROMPT } from "@/features/constants/systemPromptConstants";
+import { KoeiroParam, DEFAULT_KOEIRO_PARAM } from "@/features/constants/koeiroParam";
+import { getChatResponseStream } from "@/features/chat/openAiChat";
+import { M_PLUS_2, Montserrat } from "next/font/google";
+import { Introduction } from "@/components/introduction";
+import { Menu } from "@/components/menu";
+import { GitHubLink } from "@/components/githubLink";
+import { Meta } from "@/components/meta";
+import { ElevenLabsParam, DEFAULT_ELEVEN_LABS_PARAM } from "@/features/constants/elevenLabsParam";
+import { buildUrl } from "@/utils/buildUrl";
+import { websocketService } from '../services/websocketService';
+import { MessageMiddleOut } from "@/features/messages/messageMiddleOut";
+import { NotificationToast } from "@/components/NotificationToast";
+import { useNotificationContainer } from "@/hooks/useNotification";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
-type Props = {
-  openAiKey: string;
-  elevenLabsKey: string;
-  systemPrompt: string;
-  chatLog: Message[];
-  elevenLabsParam: ElevenLabsParam;
-  koeiroParam: KoeiroParam;
-  assistantMessage: string;
-  onChangeSystemPrompt: (systemPrompt: string) => void;
-  onChangeAiKey: (key: string) => void;
-  onChangeElevenLabsKey: (key: string) => void;
-  onChangeChatLog: (index: number, text: string) => void;
-  onChangeElevenLabsParam: (param: ElevenLabsParam) => void;
-  onChangeKoeiromapParam: (param: KoeiroParam) => void;
-  handleClickResetChatLog: () => void;
-  handleClickResetSystemPrompt: () => void;
-  backgroundImage: string;
-  onChangeBackgroundImage: (value: string) => void;
-  onChatMessage: (message: string) => void;
-  onTokensUpdate: (tokens: any) => void;
-  onChangeOpenRouterKey: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  openRouterKey: string;
+const m_plus_2 = M_PLUS_2({
+  variable: "--font-m-plus-2",
+  display: "swap",
+  preload: false,
+});
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  display: "swap",
+  subsets: ["latin"],
+});
+
+type LLMCallbackResult = {
+  processed: boolean;
+  error?: string;
 };
 
-export const Menu = ({
-  openAiKey,
-  elevenLabsKey,
-  openRouterKey,
-  systemPrompt,
-  chatLog,
-  elevenLabsParam,
-  koeiroParam,
-  assistantMessage,
-  onChangeSystemPrompt,
-  onChangeAiKey,
-  onChangeElevenLabsKey,
-  onChangeChatLog,
-  onChangeElevenLabsParam,
-  onChangeKoeiromapParam,
-  handleClickResetChatLog,
-  handleClickResetSystemPrompt,
-  backgroundImage,
-  onChangeBackgroundImage,
-  onChatMessage,
-  onTokensUpdate,
-  onChangeOpenRouterKey,
-}: Props) => {
-  const [showSettings, setShowSettings] = useState(false);
-  const [showChatLog, setShowChatLog] = useState(false);
-  const [isOpening, setIsOpening] = useState(false);
+export default function Home() {
   const { viewer } = useContext(ViewerContext);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { notifications, removeNotification } = useNotificationContainer();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleOpenSettings = () => {
-    setIsOpening(true);
-    setTimeout(() => {
-      setShowSettings(true);
-    }, 50);
-  };
-
-  const handleCloseSettings = () => {
-    setShowSettings(false);
-    setIsOpening(false);
-  };
-
-  useEffect(() => {
-    const savedBackground = localStorage.getItem('backgroundImage');
-    if (savedBackground) {
-      onChangeBackgroundImage(savedBackground);
+  const [systemPrompt, setSystemPrompt] = useState(SYSTEM_PROMPT);
+  const [openAiKey, setOpenAiKey] = useState("");
+  const [elevenLabsKey, setElevenLabsKey] = useState("");
+  const [elevenLabsParam, setElevenLabsParam] = useState<ElevenLabsParam>(DEFAULT_ELEVEN_LABS_PARAM);
+  const [koeiroParam, setKoeiroParam] = useState<KoeiroParam>(DEFAULT_KOEIRO_PARAM);
+  const [chatProcessing, setChatProcessing] = useState(false);
+  const [chatLog, setChatLog] = useState<Message[]>([]);
+  const [assistantMessage, setAssistantMessage] = useState("");
+  const [backgroundImage, setBackgroundImage] = useState<string>('');
+  const [restreamTokens, setRestreamTokens] = useState<any>(null);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [isAISpeaking, setIsAISpeaking] = useState(false);
+  const [openRouterKey, setOpenRouterKey] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('openRouterKey') || '';
     }
-  }, [onChangeBackgroundImage]);
+    return '';
+  });
 
-  const handleChangeSystemPrompt = useCallback(
-    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onChangeSystemPrompt(event.target.value);
-    },
-    [onChangeSystemPrompt]
-  );
-
-  const handleAiKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeAiKey(event.target.value);
-    },
-    [onChangeAiKey]
-  );
-
-  const handleElevenLabsKeyChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onChangeElevenLabsKey(event.target.value);
-    },
-    [onChangeElevenLabsKey]
-  );
-
-  const handleElevenLabsVoiceChange = useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>) => {
-      onChangeElevenLabsParam({
-        voiceId: event.target.value
-      });
-    },
-    [onChangeElevenLabsParam]
-  );
-
-  const handleChangeKoeiroParam = useCallback(
-    (x: number, y: number) => {
-      onChangeKoeiromapParam({
-        speakerX: x,
-        speakerY: y,
-      });
-    },
-    [onChangeKoeiromapParam]
-  );
-
-  const handleClickOpenVrmFile = useCallback(() => {
-    fileInputRef.current?.click();
+  // Apply UI color on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const uiColor = localStorage.getItem('uiColor') || '#856292';
+      document.documentElement.style.setProperty('--color-primary', uiColor);
+    }
   }, []);
 
-  const handleChangeVrmFile = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const files = event.target.files;
-      if (!files) return;
+  useEffect(() => {
+    if (window.localStorage.getItem("chatVRMParams")) {
+      const params = JSON.parse(
+        window.localStorage.getItem("chatVRMParams") as string
+      );
+      setSystemPrompt(params.systemPrompt);
+      setElevenLabsParam(params.elevenLabsParam);
+      setChatLog(params.chatLog);
+    }
+    if (window.localStorage.getItem("elevenLabsKey")) {
+      const key = window.localStorage.getItem("elevenLabsKey") as string;
+      setElevenLabsKey(key);
+    }
+    const savedOpenRouterKey = localStorage.getItem('openRouterKey');
+    if (savedOpenRouterKey) {
+      setOpenRouterKey(savedOpenRouterKey);
+    }
+    const savedBackground = localStorage.getItem('backgroundImage');
+    if (savedBackground) {
+      setBackgroundImage(savedBackground);
+    }
+  }, []);
 
-      const file = files[0];
-      if (!file) return;
+  useEffect(() => {
+    process.nextTick(() => {
+      window.localStorage.setItem(
+        "chatVRMParams",
+        JSON.stringify({ systemPrompt, elevenLabsParam, chatLog })
+      );
+      window.localStorage.setItem("elevenLabsKey", elevenLabsKey);
+    });
+  }, [systemPrompt, elevenLabsParam, chatLog]);
 
-      const file_type = file.name.split(".").pop();
+  useEffect(() => {
+    if (backgroundImage) {
+      document.body.style.backgroundImage = `url(${backgroundImage})`;
+    } else {
+      document.body.style.backgroundImage = `url(${buildUrl("/bg-c.png")})`;
+    }
+  }, [backgroundImage]);
 
-      if (file_type === "vrm") {
-        const blob = new Blob([file], { type: "application/octet-stream" });
-        const url = window.URL.createObjectURL(blob);
-        viewer.loadVrm(url);
+  const handleChangeChatLog = useCallback(
+    (targetIndex: number, text: string) => {
+      const newChatLog = chatLog.map((v: Message, i) => {
+        return i === targetIndex ? { role: v.role, content: text } : v;
+      });
+      setChatLog(newChatLog);
+    },
+    [chatLog]
+  );
+
+  const handleSpeakAi = useCallback(
+    async (
+      screenplay: Screenplay,
+      elevenLabsKey: string,
+      elevenLabsParam: ElevenLabsParam,
+      onStart?: () => void,
+      onEnd?: () => void
+    ) => {
+      setIsAISpeaking(true);
+      try {
+        await speakCharacter(
+          screenplay, 
+          elevenLabsKey, 
+          elevenLabsParam, 
+          viewer, 
+          () => {
+            setIsPlayingAudio(true);
+            console.log('audio playback started');
+            onStart?.();
+          }, 
+          () => {
+            setIsPlayingAudio(false);
+            console.log('audio playback completed');
+            onEnd?.();
+          }
+        );
+      } catch (error) {
+        console.error('Error during AI speech:', error);
+      } finally {
+        setIsAISpeaking(false);
       }
-
-      event.target.value = "";
     },
     [viewer]
   );
 
-  const handleBackgroundImageChange = (image: string) => {
-    onChangeBackgroundImage(image);
+  const handleSendChat = useCallback(
+    async (text: string, username?: string, isFromStream?: boolean) => {
+      const newMessage = text;
+      if (newMessage == null) return;
+
+      setChatProcessing(true);
+      
+      // Formatear el contenido del mensaje para el log
+      const messageContent = isFromStream && username 
+        ? `${username}: ${newMessage}` 
+        : newMessage;
+      
+      // Agregar mensaje al log ANTES de procesar
+      const messageLog: Message[] = [
+        ...chatLog,
+        { role: "user", content: messageContent },
+      ];
+      setChatLog(messageLog);
+
+      const messageProcessor = new MessageMiddleOut();
+      const processedMessages = messageProcessor.process([
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        ...messageLog,
+      ]);
+
+      let localOpenRouterKey = openRouterKey;
+      if (!localOpenRouterKey) {
+        localOpenRouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY!;
+      }
+
+      // Get selected model
+      const selectedModel = localStorage.getItem('selectedLLMModel') || 'google/gemini-2.0-flash-exp:free';
+
+      const stream = await getChatResponseStream(
+        processedMessages, 
+        openAiKey, 
+        localOpenRouterKey,
+        selectedModel
+      ).catch((e) => {
+        console.error(e);
+        return null;
+      });
+      
+      if (stream == null) {
+        setChatProcessing(false);
+        return;
+      }
+
+      const reader = stream.getReader();
+      let receivedMessage = "";
+      let aiTextLog = "";
+      let tag = "";
+      const sentences = new Array<string>();
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          receivedMessage += value;
+
+          const tagMatch = receivedMessage.match(/^\[(.*?)\]/);
+          if (tagMatch && tagMatch[0]) {
+            tag = tagMatch[0];
+            receivedMessage = receivedMessage.slice(tag.length);
+            console.log('tag:', tag);
+          }
+
+          const sentenceMatch = receivedMessage.match(
+            /^(.+[。．！？\n.!?]|.{10,}[、,])/
+          );
+          
+          if (sentenceMatch && sentenceMatch[0]) {
+            const sentence = sentenceMatch[0];
+            sentences.push(sentence);
+            console.log('sentence:', sentence);
+
+            receivedMessage = receivedMessage
+              .slice(sentence.length)
+              .trimStart();
+
+            if (
+              !sentence.replace(
+                /^[\s\[\(\{「［（【『〈《〔｛«‹〘〚〛〙›»〕》〉』】）］」\}\)\]]+$/g,
+                ""
+              )
+            ) {
+              continue;
+            }
+
+            const aiText = `${tag} ${sentence}`;
+            const aiTalks = textsToScreenplay([aiText], koeiroParam);
+            aiTextLog += aiText;
+
+            const currentAssistantMessage = sentences.join(" ");
+            handleSpeakAi(aiTalks[0], elevenLabsKey, elevenLabsParam, () => {
+              setAssistantMessage(currentAssistantMessage);
+            });
+          }
+        }
+      } catch (e) {
+        setChatProcessing(false);
+        console.error(e);
+      } finally {
+        reader.releaseLock();
+      }
+
+      // Agregar respuesta del asistente al log
+      const messageLogAssistant: Message[] = [
+        ...messageLog,
+        { role: "assistant", content: aiTextLog },
+      ];
+
+      setChatLog(messageLogAssistant);
+      setChatProcessing(false);
+    },
+    [systemPrompt, chatLog, handleSpeakAi, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey, koeiroParam]
+  );
+
+      const messageProcessor = new MessageMiddleOut();
+      const processedMessages = messageProcessor.process([
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        ...messageLog,
+      ]);
+
+      let localOpenRouterKey = openRouterKey;
+      if (!localOpenRouterKey) {
+        localOpenRouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY!;
+      }
+
+      // Get selected model
+      const selectedModel = localStorage.getItem('selectedLLMModel') || 'google/gemini-2.0-flash-exp:free';
+
+      const stream = await getChatResponseStream(
+        processedMessages, 
+        openAiKey, 
+        localOpenRouterKey,
+        selectedModel
+      ).catch((e) => {
+        console.error(e);
+        return null;
+      });
+      
+      if (stream == null) {
+        setChatProcessing(false);
+        return;
+      }
+
+      const reader = stream.getReader();
+      let receivedMessage = "";
+      let aiTextLog = "";
+      let tag = "";
+      const sentences = new Array<string>();
+      
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          receivedMessage += value;
+
+          const tagMatch = receivedMessage.match(/^\[(.*?)\]/);
+          if (tagMatch && tagMatch[0]) {
+            tag = tagMatch[0];
+            receivedMessage = receivedMessage.slice(tag.length);
+            console.log('tag:', tag);
+          }
+
+          const sentenceMatch = receivedMessage.match(
+            /^(.+[。．！？\n.!?]|.{10,}[、,])/
+          );
+          
+          if (sentenceMatch && sentenceMatch[0]) {
+            const sentence = sentenceMatch[0];
+            sentences.push(sentence);
+            console.log('sentence:', sentence);
+
+            receivedMessage = receivedMessage
+              .slice(sentence.length)
+              .trimStart();
+
+            if (
+              !sentence.replace(
+                /^[\s\[\(\{「［（【『〈《〔｛«‹〘〚〛〙›»〕》〉』】）］」\}\)\]]+$/g,
+                ""
+              )
+            ) {
+              continue;
+            }
+
+            const aiText = `${tag} ${sentence}`;
+            const aiTalks = textsToScreenplay([aiText], koeiroParam);
+            aiTextLog += aiText;
+
+            const currentAssistantMessage = sentences.join(" ");
+            handleSpeakAi(aiTalks[0], elevenLabsKey, elevenLabsParam, () => {
+              setAssistantMessage(currentAssistantMessage);
+            });
+          }
+        }
+      } catch (e) {
+        setChatProcessing(false);
+        console.error(e);
+      } finally {
+        reader.releaseLock();
+      }
+
+      const messageLogAssistant: Message[] = [
+        ...messageLog,
+        { role: "assistant", content: aiTextLog },
+      ];
+
+      setChatLog(messageLogAssistant);
+      setChatProcessing(false);
+    },
+    [systemPrompt, chatLog, handleSpeakAi, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey, koeiroParam]
+  );
+
+  const handleTokensUpdate = useCallback((tokens: any) => {
+    setRestreamTokens(tokens);
+  }, []);
+
+  useEffect(() => {
+    websocketService.setLLMCallback(async (message: string, username?: string, isFromStream?: boolean): Promise<LLMCallbackResult> => {
+      try {
+        if (isAISpeaking || isPlayingAudio || chatProcessing) {
+          console.log('Skipping message processing - system busy');
+          return {
+            processed: false,
+            error: 'System is busy processing previous message'
+          };
+        }
+        
+        await handleSendChat(message, username, isFromStream);
+        return {
+          processed: true
+        };
+      } catch (error) {
+        console.error('Error processing message:', error);
+        return {
+          processed: false,
+          error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
+      }
+    });
+  }, [handleSendChat, chatProcessing, isPlayingAudio, isAISpeaking]);
+
+  const handleOpenRouterKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newKey = event.target.value;
+    setOpenRouterKey(newKey);
+    localStorage.setItem('openRouterKey', newKey);
   };
 
   return (
-    <>
-      <div className="absolute z-10 m-24">
-        <div className="grid grid-flow-col gap-[8px]">
-          <div 
-            style={{
-              animation: 'slideInLeft 0.3s ease-out'
-            }}
-          >
-            <IconButton
-              iconName="24/Menu"
-              label="Settings"
-              isProcessing={false}
-              onClick={handleOpenSettings}
-            />
-          </div>
-          <div
-            style={{
-              animation: 'slideInLeft 0.4s ease-out'
-            }}
-          >
-            {showChatLog ? (
-              <IconButton
-                iconName="24/CommentOutline"
-                label="Conversation Log"
-                isProcessing={false}
-                onClick={() => setShowChatLog(false)}
-              />
-            ) : (
-              <IconButton
-                iconName="24/CommentFill"
-                label="Conversation Log"
-                isProcessing={false}
-                disabled={chatLog.length <= 0}
-                onClick={() => setShowChatLog(true)}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+    <div className={`${m_plus_2.variable} ${montserrat.variable}`}>
+      <Meta />
       
-      <style jsx>{`
-        @keyframes slideInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-      `}</style>
-      {showChatLog && <ChatLog messages={chatLog} />}
-      {showSettings && (
-        <SettingsTabs
-          openAiKey={openAiKey}
-          elevenLabsKey={elevenLabsKey}
-          openRouterKey={openRouterKey}
-          elevenLabsParam={elevenLabsParam}
-          chatLog={chatLog}
-          systemPrompt={systemPrompt}
-          koeiroParam={koeiroParam}
-          onClickClose={handleCloseSettings}
-          onChangeAiKey={handleAiKeyChange}
-          onChangeElevenLabsKey={handleElevenLabsKeyChange}
-          onChangeElevenLabsVoice={handleElevenLabsVoiceChange}
-          onChangeSystemPrompt={handleChangeSystemPrompt}
-          onChangeChatLog={onChangeChatLog}
-          onChangeKoeiroParam={handleChangeKoeiroParam}
-          onClickOpenVrmFile={handleClickOpenVrmFile}
-          onClickResetChatLog={handleClickResetChatLog}
-          onClickResetSystemPrompt={handleClickResetSystemPrompt}
-          backgroundImage={backgroundImage}
-          onChangeBackgroundImage={handleBackgroundImageChange}
-          onTokensUpdate={onTokensUpdate}
-          onChatMessage={onChatMessage}
-          onChangeOpenRouterKey={onChangeOpenRouterKey}
-        />
+      {isLoading && (
+        <LoadingScreen onLoadComplete={() => setIsLoading(false)} />
       )}
-      {!showChatLog && assistantMessage && (
-        <AssistantText message={assistantMessage} />
+      
+      {!isLoading && (
+        <>
+          <Introduction
+            openAiKey={openAiKey}
+            onChangeAiKey={setOpenAiKey}
+            elevenLabsKey={elevenLabsKey}
+            onChangeElevenLabsKey={setElevenLabsKey}
+          />
+          <VrmViewer />
+          <MessageInputContainer
+            isChatProcessing={chatProcessing}
+            onChatProcessStart={handleSendChat}
+          />
+          <Menu
+            openAiKey={openAiKey}
+            elevenLabsKey={elevenLabsKey}
+            openRouterKey={openRouterKey}
+            systemPrompt={systemPrompt}
+            chatLog={chatLog}
+            elevenLabsParam={elevenLabsParam}
+            koeiroParam={koeiroParam}
+            assistantMessage={assistantMessage}
+            onChangeAiKey={setOpenAiKey}
+            onChangeElevenLabsKey={setElevenLabsKey}
+            onChangeSystemPrompt={setSystemPrompt}
+            onChangeChatLog={handleChangeChatLog}
+            onChangeElevenLabsParam={setElevenLabsParam}
+            onChangeKoeiromapParam={setKoeiroParam}
+            handleClickResetChatLog={() => setChatLog([])}
+            handleClickResetSystemPrompt={() => setSystemPrompt(SYSTEM_PROMPT)}
+            backgroundImage={backgroundImage}
+            onChangeBackgroundImage={setBackgroundImage}
+            onTokensUpdate={handleTokensUpdate}
+            onChatMessage={handleSendChat}
+            onChangeOpenRouterKey={handleOpenRouterKeyChange}
+          />
+          <GitHubLink />
+        </>
       )}
-      <input
-        type="file"
-        className="hidden"
-        accept=".vrm"
-        ref={fileInputRef}
-        onChange={handleChangeVrmFile}
-      />
-    </>
+      
+      {/* Notification Container */}
+      <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
+        {notifications.map((notification) => (
+          <NotificationToast
+            key={notification.id}
+            message={notification.message}
+            type={notification.type}
+            onClose={() => removeNotification(notification.id)}
+          />
+        ))}
+      </div>
+    </div>
   );
-};
+}
+      <GitHubLink />
+      
+      {/* Notification Container */}
+      <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
+        {notifications.map((notification) => (
+          <NotificationToast
+            key={notification.id}
+            message={notification.message}
+            type={notification.type}
+            onClose={() => removeNotification(notification.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
