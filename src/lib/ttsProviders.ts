@@ -8,6 +8,40 @@ export type TTSProvider =
   | 'azure'
   | 'browser';
 
+// --- NUEVA CLASE TTSManager ---
+class TTSManager {
+  private currentProvider: TTSProvider = 'browser';
+  private providerConfig: any = {}; // Para guardar configuraciones como keys/voces
+
+  setProvider(provider: TTSProvider, config: any = {}) {
+    this.currentProvider = provider;
+    this.providerConfig[provider] = config;
+    console.log(`TTS Provider set to ${provider}`);
+  }
+
+  async synthesize(message: string): Promise<string> {
+    // ESTO ES UN PLACEHOLDER.
+    // Aquí deberías implementar la lógica para llamar al proveedor TTS actual.
+    
+    if (this.currentProvider === 'browser') {
+        // En un caso real, la implementación de browser TTS
+        // probablemente llamaría a window.speechSynthesis
+        console.log(`Browser TTS synthesizing: ${message}`);
+        return ''; // El TTS del navegador no devuelve URL
+    }
+    
+    // Para otros proveedores que devuelven URL de audio
+    console.log(`Synthesizing via ${this.currentProvider}: ${message}`);
+    
+    // Devolver una URL dummy o lógica de API aquí
+    return `/dummy-audio-${this.currentProvider}.mp3`; 
+  }
+}
+
+// Exportar la instancia única para que pueda ser utilizada como un singleton.
+export const ttsManager = new TTSManager();
+
+// --- El array de metadatos se mantiene ---
 export const TTS_PROVIDERS = [
   {
     id: 'elevenlabs' as TTSProvider,
