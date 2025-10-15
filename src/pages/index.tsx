@@ -280,109 +280,9 @@ export default function Home() {
     },
     [systemPrompt, chatLog, handleSpeakAi, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey, koeiroParam]
   );
-
-      const messageProcessor = new MessageMiddleOut();
-      const processedMessages = messageProcessor.process([
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        ...messageLog,
-      ]);
-
-      let localOpenRouterKey = openRouterKey;
-      if (!localOpenRouterKey) {
-        localOpenRouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY!;
-      }
-
-      // Get selected model
-      const selectedModel = localStorage.getItem('selectedLLMModel') || 'google/gemini-2.0-flash-exp:free';
-
-      const stream = await getChatResponseStream(
-        processedMessages, 
-        openAiKey, 
-        localOpenRouterKey,
-        selectedModel
-      ).catch((e) => {
-        console.error(e);
-        return null;
-      });
-      
-      if (stream == null) {
-        setChatProcessing(false);
-        return;
-      }
-
-      const reader = stream.getReader();
-      let receivedMessage = "";
-      let aiTextLog = "";
-      let tag = "";
-      const sentences = new Array<string>();
-      
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          receivedMessage += value;
-
-          const tagMatch = receivedMessage.match(/^\[(.*?)\]/);
-          if (tagMatch && tagMatch[0]) {
-            tag = tagMatch[0];
-            receivedMessage = receivedMessage.slice(tag.length);
-            console.log('tag:', tag);
-          }
-
-          const sentenceMatch = receivedMessage.match(
-            /^(.+[。．！？\n.!?]|.{10,}[、,])/
-          );
-          
-          if (sentenceMatch && sentenceMatch[0]) {
-            const sentence = sentenceMatch[0];
-            sentences.push(sentence);
-            console.log('sentence:', sentence);
-
-            receivedMessage = receivedMessage
-              .slice(sentence.length)
-              .trimStart();
-
-            if (
-              !sentence.replace(
-                /^[\s\[\(\{「［（【『〈《〔｛«‹〘〚〛〙›»〕》〉』】）］」\}\)\]]+$/g,
-                ""
-              )
-            ) {
-              continue;
-            }
-
-            const aiText = `${tag} ${sentence}`;
-            const aiTalks = textsToScreenplay([aiText], koeiroParam);
-            aiTextLog += aiText;
-
-            const currentAssistantMessage = sentences.join(" ");
-            handleSpeakAi(aiTalks[0], elevenLabsKey, elevenLabsParam, () => {
-              setAssistantMessage(currentAssistantMessage);
-            });
-          }
-        }
-      } catch (e) {
-        setChatProcessing(false);
-        console.error(e);
-      } finally {
-        reader.releaseLock();
-      }
-
-      const messageLogAssistant: Message[] = [
-        ...messageLog,
-        { role: "assistant", content: aiTextLog },
-      ];
-
-      setChatLog(messageLogAssistant);
-      setChatProcessing(false);
-    },
-    [systemPrompt, chatLog, handleSpeakAi, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey, koeiroParam]
-  );
-
+  
+  // NOTE: Se eliminó el segundo bloque de lógica de stream (código duplicado)
+  
   const handleTokensUpdate = useCallback((tokens: any) => {
     setRestreamTokens(tokens);
   }, []);
@@ -465,22 +365,6 @@ export default function Home() {
           <GitHubLink />
         </>
       )}
-      
-      {/* Notification Container */}
-      <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
-        {notifications.map((notification) => (
-          <NotificationToast
-            key={notification.id}
-            message={notification.message}
-            type={notification.type}
-            onClose={() => removeNotification(notification.id)}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-      <GitHubLink />
       
       {/* Notification Container */}
       <div className="fixed top-0 right-0 z-[100] p-4 space-y-2">
