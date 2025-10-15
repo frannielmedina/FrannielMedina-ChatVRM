@@ -127,8 +127,6 @@ export default function Home() {
   const handleSpeakAi = useCallback(
     async (
       screenplay: Screenplay,
-      elevenLabsKey: string,
-      elevenLabsParam: ElevenLabsParam,
       onStart?: () => void,
       onEnd?: () => void
     ) => {
@@ -136,8 +134,6 @@ export default function Home() {
       try {
         await speakCharacter(
           screenplay, 
-          elevenLabsKey, 
-          elevenLabsParam, 
           viewer, 
           () => {
             setIsPlayingAudio(true);
@@ -190,7 +186,7 @@ export default function Home() {
         return messageLog;
       });
     },
-    [systemPrompt, openAiKey, elevenLabsKey, elevenLabsParam, openRouterKey, koeiroParam, chatProcessing]
+    [systemPrompt, openAiKey, openRouterKey, koeiroParam, chatProcessing]
   );
 
   // Nueva función auxiliar para procesar el mensaje
@@ -275,7 +271,7 @@ export default function Home() {
           aiTextLog += aiText;
 
           const currentAssistantMessage = sentences.join(" ");
-          handleSpeakAi(aiTalks[0], elevenLabsKey, elevenLabsParam, () => {
+          handleSpeakAi(aiTalks[0], () => {
             setAssistantMessage(currentAssistantMessage);
           });
         }
