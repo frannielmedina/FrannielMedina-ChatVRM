@@ -1,8 +1,9 @@
+// src/features/elevenlabs/elevenlabs.ts
+
 import { ElevenLabsParam } from "../constants/elevenLabsParam";
 import { TalkStyle } from "../messages/messages";
 import axios from 'axios';
 import { ElevenLabsClient } from "elevenlabs";
-
 
 export async function synthesizeVoice(
   message: string,
@@ -12,54 +13,72 @@ export async function synthesizeVoice(
   elevenLabsKey: string,
   elevenLabsParam: ElevenLabsParam
 ) {
-
-  // Set the API key for ElevenLabs API. 
-  // Do not use directly. Use environment variables.
   const API_KEY = elevenLabsKey;
-  // Set the ID of the voice to be used.
   const VOICE_ID = elevenLabsParam.voiceId;
 
-  console.log('elevenlabs voice_id: ' + VOICE_ID);
+  console.log('[ElevenLabs] Synthesizing with voice_id:', VOICE_ID);
+  console.log('[ElevenLabs] Message:', message.substring(0, 50) + '...');
 
-  // Set options for the API request.
-  const options = {
-    method: 'POST',
-    url: `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-    headers: {
-      accept: 'audio/mpeg', // Set the expected response type to audio/mpeg.
-      'content-type': 'application/json', // Set the content type to application/json.
-      'xi-api-key': `${API_KEY}`, // Set the API key in the headers.
-    },
-    data: {
-      text: message, // Pass in the inputText as the text to be converted to speech.
-    },
-    responseType: 'arraybuffer', // Set the responseType to arraybuffer to receive binary data as response.
-  };
+  try {
+    const options = {
+      method: 'POST',
+      url: `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+      headers: {
+        accept: 'audio/mpeg',
+        'content-type': 'application/json',
+        'xi-api-key': `${API_KEY}`,
+      },
+      data: {
+        text: message,
+        model_id: 'eleven_monolingual_v1',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+        }
+      },
+      responseType: 'arraybuffer' as const,
+    };
 
-  // Send the API request using Axios and wait for the response.
-  // @ts-ignore
-  const speechDetails = await axios.request(options);
-  // Get the binary audio data received from the API response.
-  const data =  speechDetails.data;
-  // Create a new Blob object from the audio data with MIME type 'audio/mpeg'
-  const blob = new Blob([data], { type: 'audio/mpeg' });
-  // Create a URL for the blob object
-  const url = URL.createObjectURL(blob);
+    const speechDetails = await axios.request(options);
+    const data = speechDetails.data;
+    
+    const blob = new Blob([data], { type: 'audio/mpeg' });
+    const url = URL.createObjectURL(blob);
 
-  return {
-    audio: url
-  };
+    console.log('[ElevenLabs] Audio generated successfully');
+
+    return {
+      audio: url
+    };
+  } catch (error) {
+    console.error('[ElevenLabs] Error synthesizing voice:', error);
+    
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        throw new Error('Invalid ElevenLabs API key');
+      } else if (error.response?.status === 404) {
+        throw new Error('Voice ID not found. Please select a valid voice.');
+      } else if (error.response?.status === 429) {
+        throw new Error('ElevenLabs rate limit exceeded. Please try again later.');
+      }
+    }
+    
+    throw error;
+  }
 }
 
 export async function getVoices(elevenLabsKey: string) {
-  const client = new ElevenLabsClient({ apiKey: elevenLabsKey });
-  const voices = await client.voices.getAll();
-  console.log(voices);
-  return voices;
-  /*
-  const response = await axios.get('https://api.elevenlabs.io/v1/voices');
-  console.log(response.data);
-
-  return response.data;
-  */
+  console.log('[ElevenLabs] Fetching available voices...');
+  
+  try {
+    const client = new ElevenLabsClient({ apiKey: elevenLabsKey });
+    const voices = await client.voices.getAll();
+    
+    console.log('[ElevenLabs] Found', voices.voices.length, 'voices');
+    
+    return voices;
+  } catch (error) {
+    console.error('[ElevenLabs] Error fetching voices:', error);
+    throw error;
+  }
 }
