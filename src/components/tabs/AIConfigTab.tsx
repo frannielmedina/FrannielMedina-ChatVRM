@@ -4,6 +4,7 @@ import { getVoices } from "@/features/elevenlabs/elevenlabs";
 import { ElevenLabsParam } from "@/features/constants/elevenLabsParam";
 import { Message } from "@/features/messages/messages";
 import { LLM_MODELS } from "@/lib/modelsList";
+import { TTS_PROVIDERS, TTSProvider } from "@/lib/ttsProviders";
 import { useNotification } from "@/hooks/useNotification";
 
 type Props = {
@@ -26,11 +27,18 @@ export const AIConfigTab = (props: Props) => {
     return 'google/gemini-2.0-flash-exp:free';
   });
 
+  const [selectedTTSProvider, setSelectedTTSProvider] = useState<TTSProvider>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('ttsProvider') as TTSProvider) || 'browser';
+    }
+    return 'browser';
+  });
+
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
   const { showNotification } = useNotification();
 
   useEffect(() => {
-    if (props.elevenLabsKey) {
+    if (props.elevenLabsKey && selectedTTSProvider === 'elevenlabs') {
       getVoices(props.elevenLabsKey).then((data) => {
         const voices = data.voices;
         setElevenLabsVoices(voices);
@@ -39,7 +47,7 @@ export const AIConfigTab = (props: Props) => {
         showNotification('Error al cargar las voces de ElevenLabs', 'error');
       });
     }
-  }, [props.elevenLabsKey]);
+  }, [props.elevenLabsKey, selectedTTSProvider]);
 
   const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newModel = e.target.value;
@@ -48,8 +56,63 @@ export const AIConfigTab = (props: Props) => {
     showNotification(`Modelo cambiado a: ${LLM_MODELS.find(m => m.id === newModel)?.name}`, 'success');
   };
 
+  const handleTTSProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newProvider = e.target.value as TTSProvider;
+    setSelectedTTSProvider(newProvider);
+    localStorage.setItem('ttsProvider', newProvider);
+    
+    const providerInfo = TTS_PROVIDERS.find(p => p.id === newProvider);
+    showNotification(`TTS cambiado a: ${providerInfo?.name}`, 'success');
+  };
+
+  const selectedProviderInfo = TTS_PROVIDERS.find(p => p.id === selectedTTSProvider);
+
   return (
     <div className="space-y-8">
+      <div className="my-24">
+        <div className="my-16 typography-20 font-bold">Proveedor de Síntesis de Voz (TTS)</div>
+        <select
+          className="h-40 px-8 w-full bg-surface3 hover:bg-surface3-hover rounded-4 mb-4"
+          value={selectedTTSProvider}
+          onChange={handleTTSProviderChange}
+        >
+          {TTS_PROVIDERS.map((provider) => (
+            <option key={provider.id} value={provider.id}>
+              {provider.name} {provider.isFree ? '(Gratis)' : '(Premium)'} - {'⭐'.repeat(provider.quality)}
+            </option>
+          ))}
+        </select>
+        
+        {selectedProviderInfo && (
+          <div className={`p-4 rounded-4 mb-4 ${
+            selectedProviderInfo.isFree ? 'bg-green-50 border border-green-300' : 'bg-blue-50 border border-blue-300'
+          }`}>
+            <div className={`text-sm font-bold mb-1 ${
+              selectedProviderInfo.isFree ? 'text-green-900' : 'text-blue-900'
+            }`}>
+              {selectedProviderInfo.isFree ? '✅ Gratis' : '💎 Premium'}
+            </div>
+            <div className={`text-sm ${
+              selectedProviderInfo.isFree ? 'text-green-800' : 'text-blue-800'
+            }`}>
+              {selectedProviderInfo.description}
+            </div>
+            {selectedProviderInfo.requiresApiKey && (
+              <div className="text-xs text-yellow-700 mt-2">
+                ⚠️ Requiere configurar API key en la pestaña API
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="text-sm text-gray-600 p-3 bg-purple-50 border border-purple-300 rounded-4">
+          💡 <strong>Recomendaciones:</strong><br />
+          • <strong>Browser TTS:</strong> Siempre disponible, calidad básica<br />
+          • <strong>VOICEVOX:</strong> Excelente para voces estilo anime<br />
+          • <strong>Koeiromap:</strong> Similar a lo que usabas, gratis<br />
+          • <strong>ElevenLabs:</strong> La mejor calidad, pero requiere créditos
+        </div>
+      </div>
       <div className="my-24">
         <div className="my-16 typography-20 font-bold">Modelo de Lenguaje</div>
         <select
