@@ -6,12 +6,14 @@ export type TTSProvider =
   | 'google'
   | 'voicevox'
   | 'azure'
-  | 'browser';
+  | 'browser'
+  | 'silero' // <--- Añadido
+  | 'coqui';  // <--- Añadido
 
-// --- NUEVA CLASE TTSManager ---
+// Clase TTSManager (Implementación mínima para pasar la compilación)
 class TTSManager {
   private currentProvider: TTSProvider = 'browser';
-  private providerConfig: any = {}; // Para guardar configuraciones como keys/voces
+  private providerConfig: any = {};
 
   setProvider(provider: TTSProvider, config: any = {}) {
     this.currentProvider = provider;
@@ -20,28 +22,18 @@ class TTSManager {
   }
 
   async synthesize(message: string): Promise<string> {
-    // ESTO ES UN PLACEHOLDER.
-    // Aquí deberías implementar la lógica para llamar al proveedor TTS actual.
-    
+    // Lógica Placeholder
     if (this.currentProvider === 'browser') {
-        // En un caso real, la implementación de browser TTS
-        // probablemente llamaría a window.speechSynthesis
-        console.log(`Browser TTS synthesizing: ${message}`);
-        return ''; // El TTS del navegador no devuelve URL
+        return ''; // TTS del navegador no devuelve URL
     }
-    
-    // Para otros proveedores que devuelven URL de audio
-    console.log(`Synthesizing via ${this.currentProvider}: ${message}`);
-    
-    // Devolver una URL dummy o lógica de API aquí
     return `/dummy-audio-${this.currentProvider}.mp3`; 
   }
 }
 
-// Exportar la instancia única para que pueda ser utilizada como un singleton.
+// Exportar la instancia (Singleton)
 export const ttsManager = new TTSManager();
 
-// --- El array de metadatos se mantiene ---
+// Metadatos de proveedores
 export const TTS_PROVIDERS = [
   {
     id: 'elevenlabs' as TTSProvider,
@@ -90,5 +82,21 @@ export const TTS_PROVIDERS = [
     requiresApiKey: false,
     isFree: true,
     quality: 2,
+  },
+  {
+    id: 'silero' as TTSProvider,
+    name: 'Silero',
+    description: 'Framework TTS avanzado (generalmente usado vía backend propio)',
+    requiresApiKey: false,
+    isFree: true,
+    quality: 3,
+  },
+  {
+    id: 'coqui' as TTSProvider,
+    name: 'Coqui TTS',
+    description: 'Motor de código abierto (generalmente usado vía backend propio)',
+    requiresApiKey: false,
+    isFree: true,
+    quality: 3,
   },
 ];
