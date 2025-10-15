@@ -63,7 +63,7 @@ const Chat = ({
   const roleText = role === "assistant" ? "text-secondary" : "text-primary";
   const offsetX = role === "user" ? "pl-40" : "pr-40";
   
-  const displayName = role === "assistant" ? characterName.toUpperCase() : "YOU";
+  const displayName = role === "assistant" ? characterName.toUpperCase() : " ";
 
   return (
     <div className={`mx-auto max-w-sm my-16 ${offsetX}`}>
