@@ -34,6 +34,9 @@ export const AIConfigTab = (props: Props) => {
     return 'browser';
   });
 
+  const [koeiromapX, setKoeiromapX] = useState(0.637);
+  const [koeiromapY, setKoeiromapY] = useState(-2.501);
+
   const [elevenLabsVoices, setElevenLabsVoices] = useState<any[]>([]);
   const { showNotification } = useNotification();
 
@@ -63,6 +66,14 @@ export const AIConfigTab = (props: Props) => {
     
     const providerInfo = TTS_PROVIDERS.find(p => p.id === newProvider);
     showNotification(`TTS cambiado a: ${providerInfo?.name}`, 'success');
+  };
+
+  const handleKoeiromapPreset = (x: number, y: number) => {
+    setKoeiromapX(x);
+    setKoeiromapY(y);
+    localStorage.setItem('koeiromapX', x.toString());
+    localStorage.setItem('koeiromapY', y.toString());
+    showNotification('Preset de voz aplicado', 'success');
   };
 
   const selectedProviderInfo = TTS_PROVIDERS.find(p => p.id === selectedTTSProvider);
