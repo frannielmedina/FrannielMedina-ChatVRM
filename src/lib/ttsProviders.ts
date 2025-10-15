@@ -164,22 +164,59 @@ export class TTSManager {
   }
 
   /**
-   * Koeiromap TTS
+   * Koeiromap TTS (ahora Koemotion)
    */
   private async synthesizeKoeiromap(text: string): Promise<string> {
-    const response = await fetch('https://api.rinna.co.jp/models/koeiromap/infer', {
+    // Usar API de Koemotion (nuevo nombre de Koeiromap)
+    const apiKey = this.config.apiKey || '';
+    
+    if (!apiKey || apiKey.trim() === '') {
+      console.log('Koemotion API key not set, using free endpoint');
+      // Intentar con endpoint gratuito (puede no funcionar siempre)
+      try {
+        const response = await fetch('https://api.rinna.co.jp/models/cttse/koeiro', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+          },
+          body: JSON.stringify({
+            text: text,
+            speaker_x: this.config.speakerX || 0,
+            speaker_y: this.config.speakerY || 0,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Koemotion free endpoint failed');
+        }
+
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+      } catch (error) {
+        console.error('Koemotion error, falling back to browser TTS');
+        throw error;
+      }
+    }
+
+    // Con API key (versión de pago/trial)
+    const response = await fetch('https://api.koemotion.rinna.co.jp/v1/audio/speech', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         text: text,
-        speakerX: this.config.speakerX || 0,
-        speakerY: this.config.speakerY || 0,
-        style: 'talk',
+        speaker_x: this.config.speakerX || 0,
+        speaker_y: this.config.speakerY || 0,
+        output_format: 'wav',
       }),
     });
+
+    if (!response.ok) {
+      throw new Error(`Koemotion API error: ${response.status}`);
+    }
 
     const blob = await response.blob();
     return URL.createObjectURL(blob);
@@ -244,16 +281,34 @@ export class TTSManager {
   }
 
   /**
-   * VOICEVOX TTS
+   * VOICEVOX TTS (actualizado con endpoint correcto)
    */
   private async synthesizeVoicevox(text: string): Promise<string> {
-    // Primero, crear la query
-    const queryResponse = await fetch(
-      `https://deprecatedapis.tts.quest/v2/voicevox/audio/?key=&speaker=1&text=${encodeURIComponent(text)}`
-    );
+    try {
+      // Usar la API de VOICEVOX Web
+      // Primero crear audio query
+      const speaker = 1; // Zundamon (puedes cambiar 0-46)
+      
+      const queryResponse = await fetch(
+        `https://api.su-shiki.com/v2/voicevox/audio/?text=${encodeURIComponent(text)}&speaker=${speaker}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-    const blob = await queryResponse.blob();
-    return URL.createObjectURL(blob);
+      if (!queryResponse.ok) {
+        throw new Error('VOICEVOX query failed');
+      }
+
+      const blob = await queryResponse.blob();
+      return URL.createObjectURL(blob);
+    } catch (error) {
+      console.error('VOICEVOX error:', error);
+      throw error;
+    }
   }
 
   /**
