@@ -103,8 +103,15 @@ export const Menu = ({
 
   const handleElevenLabsVoiceChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const newVoiceId = event.target.value;
+      console.log('[Menu] Voice changed to:', newVoiceId);
+      
+      // Guardar en localStorage inmediatamente
+      localStorage.setItem('elevenLabsVoiceId', newVoiceId);
+      
+      // Actualizar el estado
       onChangeElevenLabsParam({
-        voiceId: event.target.value
+        voiceId: newVoiceId
       });
     },
     [onChangeElevenLabsParam]
