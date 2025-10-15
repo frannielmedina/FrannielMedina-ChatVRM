@@ -87,16 +87,24 @@ export const fetchAudio = async (talk: Talk): Promise<ArrayBuffer | null> => {
       case 'koeiromap': {
         const koeiromapX = parseFloat(localStorage.getItem('koeiromapX') || '0');
         const koeiromapY = parseFloat(localStorage.getItem('koeiromapY') || '0');
+        const koeiromapKey = localStorage.getItem('koeiromapKey') || '';
         
         ttsManager.setProvider('koeiromap', { 
+          apiKey: koeiromapKey,
           speakerX: koeiromapX, 
           speakerY: koeiromapY 
         });
         
-        const audioUrl = await ttsManager.synthesize(talk.message);
-        const resAudio = await fetch(audioUrl);
-        const buffer = await resAudio.arrayBuffer();
-        return buffer;
+        try {
+          const audioUrl = await ttsManager.synthesize(talk.message);
+          const resAudio = await fetch(audioUrl);
+          const buffer = await resAudio.arrayBuffer();
+          return buffer;
+        } catch (error) {
+          console.error('Koemotion/Koeiromap error:', error);
+          console.log('Intenta configurar tu API key de Koemotion en la pestaña API');
+          throw error;
+        }
       }
 
       case 'google': {
