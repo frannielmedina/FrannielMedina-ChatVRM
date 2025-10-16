@@ -1,4 +1,4 @@
-// src/features/voicevox/voicevox.ts (ARCHIVO COMPLETO)
+// src/features/voicevox/voicevox.ts
 
 export interface VoicevoxSpeaker {
   id: number;
@@ -9,13 +9,11 @@ export interface VoicevoxSpeaker {
   }>;
 }
 
-const VOICEVOX_API_URL = 'https://deprecatedapis.tts.quest/v2/voicevox';
-
 export async function getVoicevoxSpeakers(): Promise<VoicevoxSpeaker[]> {
   try {
-    console.log('[VOICEVOX] Fetching speakers...');
+    console.log('[VOICEVOX] Fetching speakers via proxy...');
     
-    const response = await fetch(`${VOICEVOX_API_URL}/speakers`);
+    const response = await fetch('/api/tts/voicevox?action=speakers');
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -27,7 +25,6 @@ export async function getVoicevoxSpeakers(): Promise<VoicevoxSpeaker[]> {
     return speakers;
   } catch (error) {
     console.error('[VOICEVOX] Error fetching speakers:', error);
-    // Devolver speakers por defecto si falla
     return getDefaultSpeakers();
   }
 }
@@ -83,45 +80,25 @@ export async function synthesizeVoicevox(
   speakerId: number = 0
 ): Promise<string> {
   try {
-    console.log(`[VOICEVOX] Synthesizing with speaker ID: ${speakerId}`);
+    console.log(`[VOICEVOX] Synthesizing with speaker ID: ${speakerId} via proxy`);
     console.log(`[VOICEVOX] Text: ${text.substring(0, 50)}...`);
     
-    // Step 1: Create audio query
-    const queryResponse = await fetch(
-      `${VOICEVOX_API_URL}/audio_query?text=${encodeURIComponent(text)}&speaker=${speakerId}`,
-      { 
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    const response = await fetch('/api/tts/voicevox', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        speakerId
+      }),
+    });
 
-    if (!queryResponse.ok) {
-      throw new Error(`Failed to create audio query: ${queryResponse.status}`);
+    if (!response.ok) {
+      throw new Error(`Failed to synthesize: ${response.status}`);
     }
 
-    const audioQuery = await queryResponse.json();
-    
-    console.log('[VOICEVOX] Audio query created successfully');
-
-    // Step 2: Synthesize audio
-    const synthesisResponse = await fetch(
-      `${VOICEVOX_API_URL}/synthesis?speaker=${speakerId}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(audioQuery),
-      }
-    );
-
-    if (!synthesisResponse.ok) {
-      throw new Error(`Failed to synthesize audio: ${synthesisResponse.status}`);
-    }
-
-    const audioBlob = await synthesisResponse.blob();
+    const audioBlob = await response.blob();
     const url = URL.createObjectURL(audioBlob);
     
     console.log('[VOICEVOX] Audio generated successfully');
