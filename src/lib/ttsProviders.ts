@@ -23,6 +23,29 @@ export interface TTSProviderConfig {
   speakerId?: number;
 }
 
+// Clase simplificada de TTSManager (mantenida para compatibilidad)
+class TTSManager {
+  private currentProvider: TTSProvider = 'browser';
+  private providerConfig: Record<string, TTSProviderConfig> = {};
+
+  setProvider(provider: TTSProvider, config: TTSProviderConfig = {}) {
+    this.currentProvider = provider;
+    this.providerConfig[provider] = config;
+    console.log(`[TTSManager] Provider set to ${provider}`, config);
+  }
+
+  getCurrentProvider(): TTSProvider {
+    return this.currentProvider;
+  }
+
+  getProviderConfig(provider?: TTSProvider): TTSProviderConfig {
+    const targetProvider = provider || this.currentProvider;
+    return this.providerConfig[targetProvider] || {};
+  }
+}
+
+export const ttsManager = new TTSManager();
+
 export const TTS_PROVIDERS = [
   {
     id: 'elevenlabs' as TTSProvider,
