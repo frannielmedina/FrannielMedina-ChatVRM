@@ -1,8 +1,5 @@
 // src/features/sileroTTS/sileroTTS.ts
 
-// Silero TTS - usando un backend público/gratuito
-const SILERO_API_URL = 'https://api.tts.quest/v1/silero';
-
 export interface SileroVoice {
   id: string;
   name: string;
@@ -26,26 +23,31 @@ export async function synthesizeSilero(
   voiceId: string = 'en_0'
 ): Promise<string> {
   try {
-    const response = await fetch(SILERO_API_URL, {
+    console.log(`[Silero] Synthesizing with voice: ${voiceId} via proxy`);
+    
+    const response = await fetch('/api/tts/silero', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         text,
-        speaker: voiceId,
-        sample_rate: 48000,
+        voiceId
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to synthesize Silero TTS');
+      throw new Error(`Failed to synthesize: ${response.status}`);
     }
 
     const audioBlob = await response.blob();
-    return URL.createObjectURL(audioBlob);
+    const url = URL.createObjectURL(audioBlob);
+    
+    console.log('[Silero] Audio generated successfully');
+    
+    return url;
   } catch (error) {
-    console.error('Error synthesizing Silero TTS:', error);
+    console.error('[Silero] Error synthesizing:', error);
     throw error;
   }
 }
