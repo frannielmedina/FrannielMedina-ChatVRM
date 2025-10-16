@@ -3,7 +3,13 @@
 import { wait } from "@/utils/wait";
 import { Viewer } from "../vrmViewer/viewer";
 import { Screenplay, Talk } from "./messages";
-import { ttsManager } from "@/lib/ttsProviders";
+import { synthesizeVoice as synthesizeElevenLabs } from "../elevenlabs/elevenlabs";
+import { synthesizeKoeiromap } from "../koeiromap/koeiromap";
+import { synthesizeVoicevox } from "../voicevox/voicevox";
+import { synthesizeGoogleTTS } from "../googleTTS/googleTTS";
+import { synthesizeAzureTTS } from "../azureTTS/azureTTS";
+import { synthesizeSilero } from "../sileroTTS/sileroTTS";
+import { synthesizeCoqui } from "../coquiTTS/coquiTTS";
 
 const createSpeakCharacter = () => {
   let lastTime = 0;
@@ -49,45 +55,50 @@ const createSpeakCharacter = () => {
 export const speakCharacter = createSpeakCharacter();
 
 export const fetchAudio = async (talk: Talk): Promise<ArrayBuffer | null> => {
-  const ttsProvider = (localStorage.getItem('ttsProvider') || 'browser') as any;
+  const ttsProvider = (localStorage.getItem('ttsProvider') || 'browser') as string;
   
   console.log(`[TTS] Using provider: ${ttsProvider}`);
   
   try {
-    // Configurar el proveedor TTS
+    let audioUrl: string | null = null;
+
     switch(ttsProvider) {
       case 'elevenlabs': {
         const elevenLabsKey = localStorage.getItem('elevenLabsKey') || '';
         const voiceId = localStorage.getItem('elevenLabsVoiceId') || 'MF3mGyEYCl7XYWbV9V6O';
         
         if (!elevenLabsKey || elevenLabsKey.trim() === '') {
-          console.log('[TTS] ElevenLabs key not set, skipping audio');
-          return null;
+          console.log('[TTS] ElevenLabs key not set, falling back to browser TTS');
+          return await fallbackToBrowserTTS(talk.message);
         }
         
         console.log(`[TTS] ElevenLabs voice ID: ${voiceId}`);
         
-        ttsManager.setProvider('elevenlabs', { 
-          apiKey: elevenLabsKey,
-          voiceId: voiceId
-        });
+        const result = await synthesizeElevenLabs(
+          talk.message,
+          talk.speakerX,
+          talk.speakerY,
+          talk.style,
+          elevenLabsKey,
+          { voiceId }
+        );
         
+        audioUrl = result.audio;
         break;
       }
 
       case 'koeiromap': {
-        const koeiromapX = parseFloat(localStorage.getItem('koeiromapX') || '0');
-        const koeiromapY = parseFloat(localStorage.getItem('koeiromapY') || '0');
+        const koeiromapX = parseFloat(localStorage.getItem('koeiromapX') || '1.32');
+        const koeiromapY = parseFloat(localStorage.getItem('koeiromapY') || '1.88');
         const koeiromapKey = localStorage.getItem('koeiromapKey') || '';
         
         console.log(`[TTS] Koeiromap params: X=${koeiromapX}, Y=${koeiromapY}`);
         
-        ttsManager.setProvider('koeiromap', { 
-          apiKey: koeiromapKey,
-          speakerX: koeiromapX, 
-          speakerY: koeiromapY 
-        });
-        
+        audioUrl = await synthesizeKoeiromap(
+          talk.message,
+          { speakerX: koeiromapX, speakerY: koeiromapY },
+          koeiromapKey
+        );
         break;
       }
 
@@ -96,10 +107,7 @@ export const fetchAudio = async (talk: Talk): Promise<ArrayBuffer | null> => {
         
         console.log(`[TTS] VOICEVOX speaker ID: ${speakerId}`);
         
-        ttsManager.setProvider('voicevox', {
-          speakerId: speakerId
-        });
-        
+        audioUrl = await synthesizeVoicevox(talk.message, speakerId);
         break;
       }
 
@@ -107,17 +115,16 @@ export const fetchAudio = async (talk: Talk): Promise<ArrayBuffer | null> => {
         const googleTTSKey = localStorage.getItem('googleTTSKey') || '';
         
         if (!googleTTSKey || googleTTSKey.trim() === '') {
-          console.log('[TTS] Google TTS key not set, skipping audio');
-          return null;
+          console.log('[TTS] Google TTS key not set, falling back to browser TTS');
+          return await fallbackToBrowserTTS(talk.message);
         }
         
-        ttsManager.setProvider('google', { 
-          apiKey: googleTTSKey,
+        audioUrl = await synthesizeGoogleTTS(talk.message, googleTTSKey, {
           language: 'en-US',
+          voice: 'en-US-Neural2-F',
           pitch: 0,
           speed: 1.0
         });
-        
         break;
       }
 
@@ -125,14 +132,15 @@ export const fetchAudio = async (talk: Talk): Promise<ArrayBuffer | null> => {
         const azureTTSKey = localStorage.getItem('azureTTSKey') || '';
         
         if (!azureTTSKey || azureTTSKey.trim() === '') {
-          console.log('[TTS] Azure TTS key not set, skipping audio');
-          return null;
+          console.log('[TTS] Azure TTS key not set, falling back to browser TTS');
+          return await fallbackToBrowserTTS(talk.message);
         }
         
-        ttsManager.setProvider('azure', { 
-          apiKey: azureTTSKey 
+        audioUrl = await synthesizeAzureTTS(talk.message, azureTTSKey, {
+          region: 'eastus',
+          language: 'en-US',
+          voice: 'en-US-JennyNeural'
         });
-        
         break;
       }
 
@@ -141,10 +149,7 @@ export const fetchAudio = async (talk: Talk): Promise<ArrayBuffer | null> => {
         
         console.log(`[TTS] Silero voice ID: ${voiceId}`);
         
-        ttsManager.setProvider('silero', {
-          voiceId: voiceId
-        });
-        
+        audioUrl = await synthesizeSilero(talk.message, voiceId);
         break;
       }
 
@@ -153,42 +158,29 @@ export const fetchAudio = async (talk: Talk): Promise<ArrayBuffer | null> => {
         
         console.log(`[TTS] Coqui model ID: ${modelId}`);
         
-        ttsManager.setProvider('coqui', {
-          voiceId: modelId
-        });
-        
+        audioUrl = await synthesizeCoqui(talk.message, modelId);
         break;
       }
 
-      case 'browser': {
-        ttsManager.setProvider('browser', {
-          language: 'en-US',
-          pitch: 1.0,
-          speed: 1.0
-        });
-        
-        await ttsManager.synthesize(talk.message);
-        return null;
-      }
-
+      case 'browser':
       default: {
-        console.log('[TTS] Unknown provider, using browser TTS');
-        ttsManager.setProvider('browser');
-        await ttsManager.synthesize(talk.message);
-        return null;
+        console.log('[TTS] Using browser TTS');
+        return await fallbackToBrowserTTS(talk.message);
       }
     }
 
-    // Sintetizar el audio
-    const audioUrl = await ttsManager.synthesize(talk.message);
-    
-    // Si es browser TTS, ya se reprodujo directamente
-    if (ttsProvider === 'browser' || !audioUrl) {
+    // Si es browser TTS, ya retornamos null arriba
+    if (!audioUrl) {
       return null;
     }
     
     // Convertir la URL a ArrayBuffer
     const response = await fetch(audioUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch audio: ${response.status}`);
+    }
+    
     const buffer = await response.arrayBuffer();
     
     console.log(`[TTS] Audio generated successfully, buffer size: ${buffer.byteLength}`);
@@ -200,13 +192,34 @@ export const fetchAudio = async (talk: Talk): Promise<ArrayBuffer | null> => {
     
     // Fallback a browser TTS
     console.log('[TTS] Falling back to browser TTS');
-    try {
-      ttsManager.setProvider('browser');
-      await ttsManager.synthesize(talk.message);
-    } catch (fallbackError) {
-      console.error('[TTS] Browser TTS fallback also failed:', fallbackError);
-    }
-    
-    return null;
+    return await fallbackToBrowserTTS(talk.message);
   }
 };
+
+// Helper function para browser TTS
+async function fallbackToBrowserTTS(message: string): Promise<null> {
+  return new Promise((resolve) => {
+    if (!window.speechSynthesis) {
+      console.error('[TTS] Browser TTS not supported');
+      resolve(null);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.lang = 'en-US';
+    utterance.pitch = 1.0;
+    utterance.rate = 1.0;
+
+    utterance.onend = () => {
+      console.log('[TTS] Browser TTS finished');
+      resolve(null);
+    };
+
+    utterance.onerror = (error) => {
+      console.error('[TTS] Browser TTS error:', error);
+      resolve(null);
+    };
+
+    window.speechSynthesis.speak(utterance);
+  });
+}
