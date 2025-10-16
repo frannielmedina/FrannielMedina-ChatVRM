@@ -1,8 +1,5 @@
 // src/features/coquiTTS/coquiTTS.ts
 
-// Coqui TTS - usando un backend público
-const COQUI_API_URL = 'https://api.tts.quest/v1/coqui';
-
 export interface CoquiVoice {
   id: string;
   name: string;
@@ -23,25 +20,31 @@ export async function synthesizeCoqui(
   modelId: string = 'tts_models/en/ljspeech/tacotron2-DDC'
 ): Promise<string> {
   try {
-    const response = await fetch(COQUI_API_URL, {
+    console.log(`[Coqui] Synthesizing with model: ${modelId} via proxy`);
+    
+    const response = await fetch('/api/tts/coqui', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         text,
-        model_name: modelId,
+        modelId
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to synthesize Coqui TTS');
+      throw new Error(`Failed to synthesize: ${response.status}`);
     }
 
     const audioBlob = await response.blob();
-    return URL.createObjectURL(audioBlob);
+    const url = URL.createObjectURL(audioBlob);
+    
+    console.log('[Coqui] Audio generated successfully');
+    
+    return url;
   } catch (error) {
-    console.error('Error synthesizing Coqui TTS:', error);
+    console.error('[Coqui] Error synthesizing:', error);
     throw error;
   }
 }
