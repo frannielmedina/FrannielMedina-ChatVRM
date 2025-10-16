@@ -1,32 +1,28 @@
-// src/features/koeiromap/koeiromap.ts (ARCHIVO COMPLETO)
+// src/features/koeiromap/koeiromap.ts
 
 export interface KoeiromapParams {
   speakerX: number;
   speakerY: number;
 }
 
-const KOEIROMAP_FREE_URL = 'https://api.tts.quest/v3/koemotion/synthesis';
-
 export async function synthesizeKoeiromap(
   text: string,
   params: KoeiromapParams,
   apiKey?: string
 ): Promise<string> {
-  console.log(`[Koeiromap] Synthesizing with X: ${params.speakerX}, Y: ${params.speakerY}`);
+  console.log(`[Koeiromap] Synthesizing with X: ${params.speakerX}, Y: ${params.speakerY} via proxy`);
   console.log(`[Koeiromap] Text: ${text.substring(0, 50)}...`);
   
   try {
-    // Siempre usar el endpoint gratuito ya que es más confiable
-    const response = await fetch(KOEIROMAP_FREE_URL, {
+    const response = await fetch('/api/tts/koeiromap', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         text,
-        speaker_x: params.speakerX,
-        speaker_y: params.speakerY,
-        style: 'talk',
+        speakerX: params.speakerX,
+        speakerY: params.speakerY,
       }),
     });
 
@@ -34,51 +30,14 @@ export async function synthesizeKoeiromap(
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const audioBlob = await response.blob();
+    const url = URL.createObjectURL(audioBlob);
     
-    console.log('[Koeiromap] Response received');
+    console.log('[Koeiromap] Audio generated successfully');
     
-    // El API puede devolver una URL o base64
-    if (data.audio_url) {
-      console.log('[Koeiromap] Audio URL received');
-      return data.audio_url;
-    } else if (data.audio) {
-      console.log('[Koeiromap] Base64 audio received, converting to blob');
-      const audioBlob = base64ToBlob(data.audio, 'audio/wav');
-      return URL.createObjectURL(audioBlob);
-    } else if (data.audioContent) {
-      console.log('[Koeiromap] audioContent received, converting to blob');
-      const audioBlob = base64ToBlob(data.audioContent, 'audio/wav');
-      return URL.createObjectURL(audioBlob);
-    }
-    
-    throw new Error('Invalid response from Koeiromap API - no audio data found');
+    return url;
   } catch (error) {
     console.error('[Koeiromap] Error synthesizing voice:', error);
-    throw error;
-  }
-}
-
-function base64ToBlob(base64: string, mimeType: string): Blob {
-  try {
-    const byteCharacters = atob(base64);
-    const byteArrays = [];
-
-    for (let offset = 0; offset < byteCharacters.length; offset += 512) {
-      const slice = byteCharacters.slice(offset, offset + 512);
-      const byteNumbers = new Array(slice.length);
-      
-      for (let i = 0; i < slice.length; i++) {
-        byteNumbers[i] = slice.charCodeAt(i);
-      }
-      
-      const byteArray = new Uint8Array(byteNumbers);
-      byteArrays.push(byteArray);
-    }
-
-    return new Blob(byteArrays, { type: mimeType });
-  } catch (error) {
-    console.error('[Koeiromap] Error converting base64 to blob:', error);
     throw error;
   }
 }
